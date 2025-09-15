@@ -61,7 +61,7 @@ public class OrderService {
         orderRepository.deleteById(id);
     }
     
-    // Functional Programming: Stream operations for filtering and analytics
+   
     
     // Filter orders by status
     public List<Order> getOrdersByStatus(Order.OrderStatus status) {
@@ -91,7 +91,7 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
     
-    // Analytics: Aggregate operations using streams
+    
     
     // Get pending orders using streams
     public List<Order> getPendingOrders() {
@@ -273,7 +273,6 @@ public class OrderService {
                             order.getExpectedDeliveryDate()))
                     .collect(Collectors.toList()));
         }
-        
         return alerts;
     }
     
@@ -283,22 +282,5 @@ public class OrderService {
                 .sorted(Comparator.comparing(Order::getOrderDate).reversed())
                 .limit(10)
                 .collect(Collectors.toList());
-    }
-    
-    // High-order function for applying discounts
-    public Function<BigDecimal, BigDecimal> createDiscountFunction(double discountPercentage) {
-        return amount -> amount.multiply(BigDecimal.valueOf(1 - discountPercentage / 100));
-    }
-    
-    // Apply discount to order
-    @Transactional
-    public Order applyDiscount(Long orderId, double discountPercentage) {
-        Order order = getOrderById(orderId);
-        Function<BigDecimal, BigDecimal> discountFunction = createDiscountFunction(discountPercentage);
-        
-        BigDecimal discountedAmount = discountFunction.apply(order.getTotalAmount());
-        order.setTotalAmount(discountedAmount);
-        
-        return saveOrder(order);
     }
 }

@@ -185,18 +185,9 @@ public class OrderController {
         }
     }
     
-    // PUT /api/orders/{id}/discount - Apply discount to order
-    @PutMapping("/{id}/discount")
-    public ResponseEntity<Order> applyDiscount(@PathVariable Long id, @RequestParam double percentage) {
-        try {
-            Order order = orderService.applyDiscount(id, percentage);
-            return ResponseEntity.ok(order);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
+  
     
-    // GET /api/orders/analytics/revenue - Calculate total revenue
+    //  Calculate total revenue
     @GetMapping("/analytics/revenue")
     public ResponseEntity<BigDecimal> getTotalRevenue(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -205,21 +196,21 @@ public class OrderController {
         return ResponseEntity.ok(revenue);
     }
     
-    // GET /api/orders/analytics/count-by-status - Get order count by status
+    //  Get order count by status (pending,confirmed)
     @GetMapping("/analytics/count-by-status")
     public ResponseEntity<Map<Order.OrderStatus, Long>> getOrderCountByStatus() {
         Map<Order.OrderStatus, Long> countByStatus = orderService.getOrderCountByStatus();
         return ResponseEntity.ok(countByStatus);
     }
     
-    // GET /api/orders/analytics/count-by-type - Get order count by type
+    // Get order count by type (kist type ka saman hoga)
     @GetMapping("/analytics/count-by-type")
     public ResponseEntity<Map<Order.OrderType, Long>> getOrderCountByType() {
         Map<Order.OrderType, Long> countByType = orderService.getOrderCountByType();
         return ResponseEntity.ok(countByType);
     }
     
-    // GET /api/orders/analytics/grouped-by-supplier - Get orders grouped by supplier
+    //  Get orders grouped by supplier (konsa hoga)
     @GetMapping("/analytics/grouped-by-supplier")
     public ResponseEntity<Map<String, List<Order>>> getOrdersGroupedBySupplier() {
         Map<String, List<Order>> groupedOrders = orderService.getOrdersGroupedBySupplier();
@@ -233,13 +224,11 @@ public class OrderController {
         return ResponseEntity.ok(alerts);
     }
     
-    // DTO for creating orders
+    // DTO for creating orders with validation
     public static class CreateOrderRequest {
         private Order.OrderType type;
         private Long supplierId;
         private List<OrderItem> items;
-        
-        // Getters and Setters
         public Order.OrderType getType() { return type; }
         public void setType(Order.OrderType type) { this.type = type; }
         public Long getSupplierId() { return supplierId; }
