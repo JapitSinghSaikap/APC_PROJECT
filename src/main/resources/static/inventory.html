@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management - Products</title>
+    <link rel="stylesheet" href="css/style-enhanced.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-warehouse"></i>
+                <span>Inventory Manager</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="inventory.html" class="nav-link active"><i class="fas fa-boxes"></i> Inventory</a></li>
+                <li><a href="suppliers.html" class="nav-link"><i class="fas fa-truck"></i> Suppliers</a></li>
+                <li><a href="orders.html" class="nav-link"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+                <li><a href="warehouses.html" class="nav-link"><i class="fas fa-building"></i> Warehouses</a></li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <section class="dashboard-header">
+                <h1><i class="fas fa-boxes"></i> Inventory Management</h1>
+                <p>Manage your product inventory and track stock levels</p>
+            </section>
+
+            <!-- Controls -->
+            <section class="controls-section mb-3">
+                <div class="controls-container">
+                    <div class="search-container">
+                        <input type="text" id="search-input" placeholder="Search products..." onkeyup="filterTable('products-table', this.value)">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="filter-container">
+                        <select id="category-filter" onchange="filterByCategory()">
+                            <option value="">All Categories</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Home">Home & Garden</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Books">Books</option>
+                        </select>
+                        <select id="stock-filter" onchange="filterByStock()">
+                            <option value="">All Stock Levels</option>
+                            <option value="low">Low Stock</option>
+                            <option value="normal">Normal Stock</option>
+                            <option value="high">High Stock</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="openProductModal()">
+                        <i class="fas fa-plus"></i> Add Product
+                    </button>
+                </div>
+            </section>
+
+            <!-- Products Table -->
+            <section class="table-section">
+                <div class="table-container">
+                    <table class="table" id="products-table">
+                        <thead>
+                            <tr>
+                                <th>Product Name</th>
+                                <th>SKU</th>
+                                <th>Category</th>
+                                <th>Stock</th>
+                                <th>Min Level</th>
+                                <th>Price</th>
+                                <th>Warehouse</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Products will be loaded here dynamically -->
+                            <tr>
+                                <td colspan="8" class="text-center loading">Loading products...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Add/Edit Product Modal -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-box"></i> <span id="modal-title">Add Product</span></h3>
+                <span class="close" onclick="closeModal('product-modal')">&times;</span>
+            </div>
+            <form id="product-form" onsubmit="handleProductSubmit(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="product-name">Product Name *</label>
+                        <input type="text" id="product-name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-sku">SKU *</label>
+                        <input type="text" id="product-sku" name="sku" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-category">Category *</label>
+                        <select id="product-category" name="category" required>
+                            <option value="">Select Category</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Clothing">Clothing</option>
+                            <option value="Home">Home & Garden</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Books">Books</option>
+                            <option value="Food">Food & Beverages</option>
+                            <option value="Health">Health & Beauty</option>
+                            <option value="Automotive">Automotive</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-price">Price *</label>
+                        <input type="number" id="product-price" name="price" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-stock">Stock Quantity *</label>
+                        <input type="number" id="product-stock" name="stockQuantity" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-min-stock">Min Stock Level *</label>
+                        <input type="number" id="product-min-stock" name="minStockLevel" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-warehouse">Warehouse *</label>
+                        <select id="product-warehouse" name="warehouseId" required>
+                            <option value="">Select Warehouse</option>
+                            <!-- Warehouses will be loaded dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-supplier">Supplier</label>
+                        <select id="product-supplier" name="supplierId">
+                            <option value="">Select Supplier</option>
+                            <!-- Suppliers will be loaded dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="product-description">Description</label>
+                    <textarea id="product-description" name="description" rows="3" placeholder="Product description..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('product-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stock Update Modal -->
+    <div id="stock-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-warehouse"></i> Update Stock</h3>
+                <span class="close" onclick="closeModal('stock-modal')">&times;</span>
+            </div>
+            <form id="stock-form" onsubmit="handleStockUpdate(event)">
+                <div class="form-group">
+                    <label for="stock-product-name">Product</label>
+                    <input type="text" id="stock-product-name" readonly>
+                    <input type="hidden" id="stock-product-id">
+                </div>
+                <div class="form-group">
+                    <label for="current-stock">Current Stock</label>
+                    <input type="number" id="current-stock" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="stock-action">Action *</label>
+                    <select id="stock-action" name="action" required onchange="toggleStockInput()">
+                        <option value="">Select Action</option>
+                        <option value="add">Add Stock</option>
+                        <option value="remove">Remove Stock</option>
+                        <option value="set">Set Stock Level</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="stock-quantity" id="stock-quantity-label">Quantity *</label>
+                    <input type="number" id="stock-quantity" name="quantity" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="stock-reason">Reason</label>
+                    <textarea id="stock-reason" name="reason" rows="2" placeholder="Reason for stock change..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('stock-modal')">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Update Stock
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script>
+        let currentProductId = null;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProducts();
+            loadWarehouses();
+            loadSuppliers();
+        });
+
+        // Load warehouses for form
+        async function loadWarehouses() {
+            try {
+                const warehouses = await ApiClient.get('/warehouses');
+                const warehouseSelect = document.getElementById('product-warehouse');
+                warehouseSelect.innerHTML = '<option value="">Select Warehouse</option>' +
+                    warehouses.map(warehouse => 
+                        `<option value="${warehouse.id}">${warehouse.name} - ${warehouse.location}</option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Failed to load warehouses:', error);
+            }
+        }
+
+        // Load suppliers for form
+        async function loadSuppliers() {
+            try {
+                const suppliers = await ApiClient.get('/suppliers');
+                const supplierSelect = document.getElementById('product-supplier');
+                supplierSelect.innerHTML = '<option value="">Select Supplier</option>' +
+                    suppliers.filter(supplier => supplier.status === 'ACTIVE')
+                        .map(supplier => 
+                            `<option value="${supplier.id}">${supplier.name}</option>`
+                        ).join('');
+            } catch (error) {
+                console.error('Failed to load suppliers:', error);
+            }
+        }
+
+        // Handle product form submission
+        async function handleProductSubmit(event) {
+            event.preventDefault();
+            
+            if (!validateRequired('product-form')) {
+                showError('Please fill in all required fields.');
+                return;
+            }
+
+            const formData = new FormData(event.target);
+            const productData = Object.fromEntries(formData.entries());
+            
+            // Convert numeric fields
+            productData.price = parseFloat(productData.price);
+            productData.stockQuantity = parseInt(productData.stockQuantity);
+            productData.minStockLevel = parseInt(productData.minStockLevel);
+            
+            // Debug: Log the raw form data
+            console.log('Raw form data:', productData);
+            
+            // Create warehouse object if warehouseId is provided
+            if (productData.warehouseId) {
+                productData.warehouse = { id: parseInt(productData.warehouseId) };
+                delete productData.warehouseId;
+            }
+            
+            // Create supplier object if supplierId is provided
+            if (productData.supplierId) {
+                productData.supplier = { id: parseInt(productData.supplierId) };
+                delete productData.supplierId;
+            }
+            
+            // Debug: Log the final data being sent
+            console.log('Final product data being sent:', productData);
+
+            try {
+                if (currentProductId) {
+                    await ApiClient.put(`/products/${currentProductId}`, productData);
+                    showSuccess('Product updated successfully!');
+                } else {
+                    await ApiClient.post('/products', productData);
+                    showSuccess('Product added successfully!');
+                }
+                closeModal('product-modal');
+                loadProducts();
+                currentProductId = null;
+            } catch (error) {
+                console.error('Failed to save product:', error);
+                showError('Failed to save product. Please try again.');
+            }
+        }
+
+        // Edit product
+        async function editProduct(productId) {
+            try {
+                const product = await ApiClient.get(`/products/${productId}`);
+                populateProductForm(product);
+                currentProductId = productId;
+                document.getElementById('modal-title').textContent = 'Edit Product';
+                openModal('product-modal');
+            } catch (error) {
+                console.error('Failed to load product:', error);
+                showError('Failed to load product details.');
+            }
+        }
+
+        // Populate product form
+        function populateProductForm(product) {
+            document.getElementById('product-name').value = product.name || '';
+            document.getElementById('product-sku').value = product.sku || '';
+            document.getElementById('product-category').value = product.category || '';
+            document.getElementById('product-price').value = product.price || '';
+            document.getElementById('product-stock').value = product.stockQuantity || '';
+            document.getElementById('product-min-stock').value = product.minStockLevel || '';
+            document.getElementById('product-description').value = product.description || '';
+            
+            if (product.warehouse) {
+                document.getElementById('product-warehouse').value = product.warehouse.id;
+            }
+            if (product.supplier) {
+                document.getElementById('product-supplier').value = product.supplier.id;
+            }
+        }
+
+        // Stock management
+        function updateStock(productId) {
+            // Implementation for stock update modal
+            // This would open the stock modal and populate it with product info
+            openModal('stock-modal');
+        }
+
+        function toggleStockInput() {
+            const action = document.getElementById('stock-action').value;
+            const label = document.getElementById('stock-quantity-label');
+            
+            switch(action) {
+                case 'add':
+                    label.textContent = 'Quantity to Add *';
+                    break;
+                case 'remove':
+                    label.textContent = 'Quantity to Remove *';
+                    break;
+                case 'set':
+                    label.textContent = 'New Stock Level *';
+                    break;
+                default:
+                    label.textContent = 'Quantity *';
+            }
+        }
+
+        // Filter functions
+        function filterByCategory() {
+            const category = document.getElementById('category-filter').value;
+            filterTableByColumn('products-table', 2, category); // Category is in column 2
+        }
+
+        function filterByStock() {
+            const stockLevel = document.getElementById('stock-filter').value;
+            const table = document.getElementById('products-table');
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const stockCell = row.cells[3]; // Stock is in column 3
+                const minStockCell = row.cells[4]; // Min stock is in column 4
+                
+                if (stockCell && minStockCell) {
+                    const stock = parseInt(stockCell.textContent);
+                    const minStock = parseInt(minStockCell.textContent);
+                    let show = true;
+                    
+                    switch(stockLevel) {
+                        case 'low':
+                            show = stock <= minStock;
+                            break;
+                        case 'normal':
+                            show = stock > minStock && stock <= minStock * 2;
+                            break;
+                        case 'high':
+                            show = stock > minStock * 2;
+                            break;
+                        default:
+                            show = true;
+                    }
+                    
+                    row.style.display = show ? '' : 'none';
+                }
+            }
+        }
+
+        function filterTableByColumn(tableId, columnIndex, filterValue) {
+            const table = document.getElementById(tableId);
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const cell = row.cells[columnIndex];
+                
+                if (cell) {
+                    const show = !filterValue || cell.textContent.includes(filterValue);
+                    row.style.display = show ? '' : 'none';
+                }
+            }
+        }
+
+        // Reset modal when opening for new product
+        function openProductModal() {
+            currentProductId = null;
+            document.getElementById('modal-title').textContent = 'Add Product';
+            document.getElementById('product-form').reset();
+            
+            // Load warehouses and suppliers
+            console.log('Loading warehouses and suppliers...');
+            loadWarehouseOptions();
+            loadSupplierOptions();
+            
+            openModal('product-modal');
+        }
+    </script>
+
+    <style>
+        .controls-section {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .controls-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #718096;
+        }
+
+        .filter-container {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .filter-container select {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            .controls-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-container {
+                max-width: none;
+            }
+
+            .filter-container {
+                justify-content: space-between;
+            }
+
+            .filter-container select {
+                flex: 1;
+            }
+        }
+    </style>
+</body>
+</html>

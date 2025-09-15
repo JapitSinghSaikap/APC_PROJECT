@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management System - Dashboard</title>
+    <link rel="stylesheet" href="css/style-enhanced.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-warehouse"></i>
+                <span>Inventory Manager</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="inventory.html" class="nav-link"><i class="fas fa-boxes"></i> Inventory</a></li>
+                <li><a href="suppliers.html" class="nav-link"><i class="fas fa-truck"></i> Suppliers</a></li>
+                <li><a href="orders.html" class="nav-link"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+                <li><a href="warehouses.html" class="nav-link"><i class="fas fa-building"></i> Warehouses</a></li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-content">
+            <h1><i class="fas fa-warehouse"></i> Inventory Management System</h1>
+            <p>Complete supply chain and inventory tracking solution</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <section class="page-header fade-in">
+                <h1><i class="fas fa-tachometer-alt"></i> Dashboard</h1>
+                <p>Welcome to your comprehensive inventory management dashboard</p>
+            </section>
+
+            <!-- Stats Cards -->
+            <section class="stats-grid fade-in">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="stat-value" id="total-products">0</div>
+                    <div class="stat-label">Total Products</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-value" id="low-stock-items">0</div>
+                    <div class="stat-label">Low Stock Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="stat-value" id="total-suppliers">0</div>
+                    <div class="stat-label">Active Suppliers</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                        <i class="fas fa-shopping-cart"></i>
+                    </div>
+                    <div class="stat-value" id="pending-orders">0</div>
+                    <div class="stat-label">Pending Orders</div>
+                </div>
+            </section>
+
+            <!-- Recent Activity and Alerts -->
+            <section class="dashboard-content fade-in">
+                <div class="content-grid">
+                    <!-- Low Stock Alerts -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-exclamation-triangle text-warning mr-2"></i>Low Stock Alerts
+                            </h3>
+                            <button class="btn btn-sm btn-outline" onclick="loadLowStockAlerts()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="low-stock-alerts" class="alert-list">
+                                <div class="empty-state">
+                                    <i class="fas fa-clipboard-check"></i>
+                                    <p>No low stock alerts</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Orders -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-clock text-primary mr-2"></i>Recent Orders
+                            </h3>
+                            <button class="btn btn-sm btn-outline" onclick="loadRecentOrders()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="recent-orders" class="order-list">
+                                <div class="empty-state">
+                                    <i class="fas fa-shopping-cart"></i>
+                                    <p>No recent orders</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card quick-actions-card fade-in">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-bolt mr-2"></i>Quick Actions
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="quick-actions-grid">
+                            <button class="btn btn-primary quick-action-btn" onclick="window.location.href='inventory.html'">
+                                <i class="fas fa-plus mb-2"></i>
+                                <span>Add Product</span>
+                            </button>
+                            <button class="btn btn-success quick-action-btn" onclick="window.location.href='suppliers.html'">
+                                <i class="fas fa-user-plus mb-2"></i>
+                                <span>Add Supplier</span>
+                            </button>
+                            <button class="btn btn-info quick-action-btn" onclick="window.location.href='orders.html'">
+                                <i class="fas fa-shopping-cart mb-2"></i>
+                                <span>Create Order</span>
+                            </button>
+                            <button class="btn btn-warning quick-action-btn" onclick="generateReport()">
+                                <i class="fas fa-file-download mb-2"></i>
+                                <span>Generate Report</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/main.js"></script>
+    <script>
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardStats();
+            loadLowStockAlerts();
+            loadRecentOrders();
+        });
+    </script>
+</body>
+</html>

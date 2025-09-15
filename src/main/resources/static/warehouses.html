@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warehouses - Inventory Management</title>
+    <link rel="stylesheet" href="css/style-enhanced.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-boxes"></i>
+                Inventory System
+            </div>
+            <ul class="nav-menu">
+                <li><a href="index.html"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="inventory.html"><i class="fas fa-box"></i> Inventory</a></li>
+                <li><a href="suppliers.html"><i class="fas fa-truck"></i> Suppliers</a></li>
+                <li><a href="orders.html"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+                <li><a href="warehouses.html" class="active"><i class="fas fa-warehouse"></i> Warehouses</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            <!-- Page Header -->
+            <header class="page-header fade-in">
+                <div class="page-header-content">
+                    <div class="page-title-section">
+                        <h1 class="page-title">
+                            <i class="fas fa-warehouse mr-3"></i>Warehouse Management
+                        </h1>
+                        <p class="page-subtitle">Manage warehouse locations and storage facilities</p>
+                    </div>
+                    <div class="page-actions">
+                        <!-- FIXED: Use the correct function name -->
+                        <button class="btn btn-primary" onclick="showCreateWarehouseModal()">
+                            <i class="fas fa-plus mr-2"></i>Add Warehouse
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <!-- Warehouse Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="totalWarehouses">0</h3>
+                        <p>Total Warehouses</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="totalProducts">0</h3>
+                        <p>Products Stored</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="averageUtilization">0%</h3>
+                        <p>Average Utilization</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3 id="lowStockItems">0</h3>
+                        <p>Low Stock Items</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label for="searchInput">Search:</label>
+                    <input type="text" id="searchInput" placeholder="Search warehouses..." onkeyup="filterWarehouses()">
+                </div>
+                <div class="filter-group">
+                    <label for="sortBy">Sort by:</label>
+                    <select id="sortBy" onchange="sortWarehouses()">
+                        <option value="name">Name</option>
+                        <option value="location">Location</option>
+                        <option value="productCount">Product Count</option>
+                        <option value="createdAt">Date Created</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Warehouses Grid -->
+            <div class="warehouses-grid" id="warehousesContainer">
+                <!-- Warehouses will be loaded here -->
+            </div>
+
+            <div id="loadingSpinner" class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i> Loading warehouses...
+            </div>
+
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-warehouse"></i>
+                <h3>No Warehouses Found</h3>
+                <p>Create your first warehouse to get started.</p>
+                <button class="btn btn-primary" onclick="showCreateWarehouseModal()">
+                    <i class="fas fa-plus"></i> Add Warehouse
+                </button>
+            </div>
+        </div>
+
+        <!-- Create/Edit Warehouse Modal -->
+        <div id="warehouseModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Add Warehouse</h2>
+                    <span class="close" onclick="closeWarehouseModal()">&times;</span>
+                </div>
+                <form id="warehouseForm" onsubmit="saveWarehouse(event)">
+                    <div class="form-group">
+                        <label for="warehouseName">Warehouse Name:</label>
+                        <input type="text" id="warehouseName" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="warehouseLocation">Location:</label>
+                        <textarea id="warehouseLocation" name="location" rows="3" required placeholder="Enter warehouse address or location details"></textarea>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" onclick="closeWarehouseModal()">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Warehouse
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Warehouse Details Modal -->
+        <div id="warehouseDetailsModal" class="modal">
+            <div class="modal-content large">
+                <div class="modal-header">
+                    <h2>Warehouse Details</h2>
+                    <span class="close" onclick="closeWarehouseDetailsModal()">&times;</span>
+                </div>
+                <div id="warehouseDetailsContent">
+                    <!-- Warehouse details will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <script src="js/main.js"></script>
+        <script>
+            // Notification function
+            function showNotification(message, type = "info") {
+                // Remove existing notifications
+                const existing = document.querySelector('.notification');
+                if (existing) existing.remove();
+
+                // Create notification
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 1rem 1.5rem;
+                    border-radius: 5px;
+                    z-index: 3000;
+                    max-width: 300px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                `;
+
+                document.body.appendChild(notification);
+
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 3000);
+            }
+
+            let allWarehouses = [];
+            let currentWarehouse = null;
+
+            // Initialize page
+            document.addEventListener('DOMContentLoaded', function() {
+                loadWarehouses();
+                loadWarehouseStats();
+            });
+
+            async function loadWarehouses() {
+                try {
+                    showLoading(true);
+                    const response = await ApiClient.get('/warehouses');
+                    allWarehouses = response;
+                    displayWarehouses(allWarehouses);
+                    showLoading(false);
+                } catch (error) {
+                    console.error('Error loading warehouses:', error);
+                    showNotification('Error loading warehouses', 'error');
+                    showLoading(false);
+                }
+            }
+
+            async function loadWarehouseStats() {
+                try {
+                    const warehouses = await ApiClient.get('/warehouses');
+                    const products = await ApiClient.get('/products');
+                    
+                    document.getElementById('totalWarehouses').textContent = warehouses.length;
+                    document.getElementById('totalProducts').textContent = products.length;
+                    
+                    // Calculate low stock items
+                    const lowStockItems = products.filter(product => 
+                        product.stockQuantity <= product.minStockLevel
+                    ).length;
+                    document.getElementById('lowStockItems').textContent = lowStockItems;
+                    
+                    // Calculate average utilization (mock calculation)
+                    const avgUtilization = warehouses.length > 0 ? 
+                        Math.round((products.length / (warehouses.length * 100)) * 100) : 0;
+                    document.getElementById('averageUtilization').textContent = Math.min(avgUtilization, 100) + '%';
+                    
+                } catch (error) {
+                    console.error('Error loading warehouse stats:', error);
+                }
+            }
+
+            function displayWarehouses(warehouses) {
+                const container = document.getElementById('warehousesContainer');
+                const emptyState = document.getElementById('emptyState');
+
+                if (warehouses.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
+
+                emptyState.style.display = 'none';
+                container.innerHTML = warehouses.map(warehouse => `
+                    <div class="warehouse-card">
+                        <div class="warehouse-header">
+                            <div class="warehouse-info">
+                                <h3>${warehouse.name}</h3>
+                                <p class="warehouse-location">
+                                    <i class="fas fa-map-marker-alt"></i> ${warehouse.location}
+                                </p>
+                            </div>
+                            <div class="warehouse-actions">
+                                <button class="btn btn-sm btn-info" onclick="viewWarehouseDetails(${warehouse.id})" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="editWarehouse(${warehouse.id})" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteWarehouse(${warehouse.id})" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="warehouse-stats">
+                            <div class="stat-item">
+                                <i class="fas fa-boxes"></i>
+                                <span id="products-count-${warehouse.id}">Loading...</span>
+                                <small>Products</small>
+                            </div>
+                            <div class="stat-item">
+                                <i class="fas fa-calendar"></i>
+                                <span>${formatDate(warehouse.createdAt)}</span>
+                                <small>Created</small>
+                            </div>
+                        </div>
+                        
+                        <div class="warehouse-footer">
+                            <button class="btn btn-sm btn-outline" onclick="viewWarehouseInventory(${warehouse.id})">
+                                <i class="fas fa-list"></i> View Inventory
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Load product counts for each warehouse
+                warehouses.forEach(warehouse => {
+                    loadWarehouseProductCount(warehouse.id);
+                });
+            }
+
+            async function loadWarehouseProductCount(warehouseId) {
+                try {
+                    const products = await ApiClient.get(`/products?warehouseId=${warehouseId}`);
+                    const countElement = document.getElementById(`products-count-${warehouseId}`);
+                    if (countElement) {
+                        countElement.textContent = products.length;
+                    }
+                } catch (error) {
+                    const countElement = document.getElementById(`products-count-${warehouseId}`);
+                    if (countElement) {
+                        countElement.textContent = '0';
+                    }
+                }
+            }
+
+            function filterWarehouses() {
+                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+                
+                const filteredWarehouses = allWarehouses.filter(warehouse => {
+                    return warehouse.name.toLowerCase().includes(searchTerm) ||
+                           warehouse.location.toLowerCase().includes(searchTerm);
+                });
+
+                displayWarehouses(filteredWarehouses);
+            }
+
+            function sortWarehouses() {
+                const sortBy = document.getElementById('sortBy').value;
+                
+                const sortedWarehouses = [...allWarehouses].sort((a, b) => {
+                    switch (sortBy) {
+                        case 'name':
+                            return a.name.localeCompare(b.name);
+                        case 'location':
+                            return a.location.localeCompare(b.location);
+                        case 'createdAt':
+                            return new Date(b.createdAt) - new Date(a.createdAt);
+                        default:
+                            return 0;
+                    }
+                });
+
+                displayWarehouses(sortedWarehouses);
+            }
+
+            function showCreateWarehouseModal() {
+                currentWarehouse = null;
+                document.getElementById('modalTitle').textContent = 'Add Warehouse';
+                document.getElementById('warehouseForm').reset();
+                document.getElementById('warehouseModal').style.display = 'block';
+            }
+
+            async function saveWarehouse(event) {
+                event.preventDefault();
+                
+                try {
+                    const formData = new FormData(event.target);
+                    const warehouseData = {
+                        name: formData.get('name'),
+                        location: formData.get('location')
+                    };
+
+                    let response;
+                    if (currentWarehouse) {
+                        response = await ApiClient.put(`/warehouses/${currentWarehouse.id}`, warehouseData);
+                    } else {
+                        response = await ApiClient.post('/warehouses', warehouseData);
+                    }
+
+                    showNotification(currentWarehouse ? 'Warehouse updated successfully' : 'Warehouse created successfully', 'success');
+                    closeWarehouseModal();
+                    loadWarehouses();
+                    loadWarehouseStats();
+                } catch (error) {
+                    console.error('Error saving warehouse:', error);
+                    showNotification('Error saving warehouse', 'error');
+                }
+            }
+
+            async function editWarehouse(id) {
+                try {
+                    const warehouse = await ApiClient.get(`/warehouses/${id}`);
+                    currentWarehouse = warehouse;
+                    
+                    document.getElementById('modalTitle').textContent = 'Edit Warehouse';
+                    document.getElementById('warehouseName').value = warehouse.name;
+                    document.getElementById('warehouseLocation').value = warehouse.location;
+                    
+                    document.getElementById('warehouseModal').style.display = 'block';
+                } catch (error) {
+                    console.error('Error loading warehouse:', error);
+                    showNotification('Error loading warehouse details', 'error');
+                }
+            }
+
+            async function viewWarehouseDetails(id) {
+                try {
+                    const [warehouse, products] = await Promise.all([
+                        ApiClient.get(`/warehouses/${id}`),
+                        ApiClient.get(`/products?warehouseId=${id}`)
+                    ]);
+                    
+                    const lowStockProducts = products.filter(p => p.stockQuantity <= p.minStockLevel);
+                    const totalValue = products.reduce((sum, p) => sum + (p.stockQuantity * p.price), 0);
+                    
+                    const detailsHtml = `
+                        <div class="warehouse-details">
+                            <div class="details-header">
+                                <div class="warehouse-info">
+                                    <h3>${warehouse.name}</h3>
+                                    <p class="location"><i class="fas fa-map-marker-alt"></i> ${warehouse.location}</p>
+                                    <p class="created-date">Created: ${formatDate(warehouse.createdAt)}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="warehouse-metrics">
+                                <div class="metric-card">
+                                    <h4>${products.length}</h4>
+                                    <p>Total Products</p>
+                                </div>
+                                <div class="metric-card">
+                                    <h4>${products.reduce((sum, p) => sum + p.stockQuantity, 0)}</h4>
+                                    <p>Total Stock</p>
+                                </div>
+                                <div class="metric-card">
+                                    <h4>$${totalValue.toFixed(2)}</h4>
+                                    <p>Inventory Value</p>
+                                </div>
+                                <div class="metric-card ${lowStockProducts.length > 0 ? 'warning' : ''}">
+                                    <h4>${lowStockProducts.length}</h4>
+                                    <p>Low Stock Items</p>
+                                </div>
+                            </div>
+
+                            <div class="products-section">
+                                <div class="section-header">
+                                    <h3>Products in this Warehouse</h3>
+                                    <button class="btn btn-primary" onclick="closeWarehouseDetailsModal(); window.location.href='inventory.html?warehouseId=${id}'">
+                                        <i class="fas fa-plus"></i> Add Product
+                                    </button>
+                                </div>
+                                
+                                ${products.length > 0 ? `
+                                    <div class="products-table">
+                                        <div class="table-header">
+                                            <div>Product</div>
+                                            <div>SKU</div>
+                                            <div>Stock</div>
+                                            <div>Min Level</div>
+                                            <div>Status</div>
+                                            <div>Value</div>
+                                        </div>
+                                        ${products.map(product => `
+                                            <div class="table-row ${product.stockQuantity <= product.minStockLevel ? 'low-stock' : ''}">
+                                                <div>
+                                                    <strong>${product.name}</strong><br>
+                                                    <small>${product.category}</small>
+                                                </div>
+                                                <div>${product.sku}</div>
+                                                <div>${product.stockQuantity}</div>
+                                                <div>${product.minStockLevel}</div>
+                                                <div>
+                                                    ${product.stockQuantity <= product.minStockLevel ? 
+                                                        '<span class="status-badge status-warning">Low Stock</span>' : 
+                                                        '<span class="status-badge status-success">In Stock</span>'
+                                                    }
+                                                </div>
+                                                <div>$${(product.stockQuantity * product.price).toFixed(2)}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : '<p class="no-products">No products in this warehouse yet.</p>'}
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('warehouseDetailsContent').innerHTML = detailsHtml;
+                    document.getElementById('warehouseDetailsModal').style.display = 'block';
+                } catch (error) {
+                    console.error('Error loading warehouse details:', error);
+                    showNotification('Error loading warehouse details', 'error');
+                }
+            }
+
+            async function viewWarehouseInventory(id) {
+                window.location.href = `inventory.html?warehouseId=${id}`;
+            }
+
+            async function deleteWarehouse(id) {
+                if (!confirm('Are you sure you want to delete this warehouse? This action cannot be undone.')) {
+                    return;
+                }
+
+                try {
+                    // Check if warehouse has products
+                    const products = await ApiClient.get(`/products?warehouseId=${id}`);
+                    if (products.length > 0) {
+                        showNotification('Cannot delete warehouse with existing products. Please move or remove all products first.', 'error');
+                        return;
+                    }
+
+                    await ApiClient.delete(`/warehouses/${id}`);
+                    showNotification('Warehouse deleted successfully', 'success');
+                    loadWarehouses();
+                    loadWarehouseStats();
+                } catch (error) {
+                    console.error('Error deleting warehouse:', error);
+                    showNotification('Error deleting warehouse', 'error');
+                }
+            }
+
+            function closeWarehouseModal() {
+                document.getElementById('warehouseModal').style.display = 'none';
+                currentWarehouse = null;
+            }
+
+            function closeWarehouseDetailsModal() {
+                document.getElementById('warehouseDetailsModal').style.display = 'none';
+            }
+
+            function showLoading(show) {
+                document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return 'N/A';
+                const date = new Date(dateString);
+                return date.toLocaleDateString();
+            }
+
+            // Close modals when clicking outside
+            window.onclick = function(event) {
+                const warehouseModal = document.getElementById('warehouseModal');
+                const detailsModal = document.getElementById('warehouseDetailsModal');
+                
+                if (event.target === warehouseModal) {
+                    closeWarehouseModal();
+                }
+                if (event.target === detailsModal) {
+                    closeWarehouseDetailsModal();
+                }
+            }
+        </script>
+    </main>
+</body>
+</html>
