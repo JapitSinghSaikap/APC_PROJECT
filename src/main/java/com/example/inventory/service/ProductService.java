@@ -5,7 +5,7 @@ import com.example.inventory.model.Product;
 import com.example.inventory.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+// import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -14,7 +14,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class ProductService {
     
     private final ProductRepository productRepository;
@@ -124,7 +123,7 @@ public class ProductService {
     
     // Business Logic: Stock management with exception handling
     
-    @Transactional
+    
     public void updateStock(Long productId, int quantity) {
         Product product = findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
@@ -137,7 +136,7 @@ public class ProductService {
         productRepository.save(product);
     }
     
-    @Transactional
+   
     public void reduceStock(Long productId, int quantity) {
         Product product = findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
@@ -154,7 +153,7 @@ public class ProductService {
         productRepository.save(product);
     }
     
-    @Transactional
+   
     public void increaseStock(Long productId, int quantity) {
         Product product = findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
