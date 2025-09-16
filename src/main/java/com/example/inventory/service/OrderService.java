@@ -16,7 +16,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional
 public class OrderService {
     
     private final OrderRepository orderRepository;
@@ -35,7 +34,7 @@ public class OrderService {
         this.supplierService = supplierService;
     }
     
-    // CRUD Operations
+    // CRUD Operations hai saare yeh kuch khas nhi
     public Order saveOrder(Order order) {
         return orderRepository.save(order);
     }
@@ -63,28 +62,26 @@ public class OrderService {
     
    
     
-    // Filter orders by status
+
     public List<Order> getOrdersByStatus(Order.OrderStatus status) {
         return findAll().stream()
                 .filter(order -> order.getStatus() == status)
                 .collect(Collectors.toList());
     }
     
-    // Filter orders by type
     public List<Order> getOrdersByType(Order.OrderType type) {
         return findAll().stream()
                 .filter(order -> order.getType() == type)
                 .collect(Collectors.toList());
     }
     
-    // Filter orders by custom criteria using high-order functions
+
     public List<Order> filterOrders(Predicate<Order> criteria) {
         return findAll().stream()
                 .filter(criteria)
                 .collect(Collectors.toList());
     }
-    
-    // Map orders to specific attributes
+
     public <T> List<T> mapOrders(Function<Order, T> mapper) {
         return findAll().stream()
                 .map(mapper)
@@ -92,8 +89,6 @@ public class OrderService {
     }
     
     
-    
-    // Get pending orders using streams
     public List<Order> getPendingOrders() {
         return findAll().stream()
                 .filter(Order::isPending)
@@ -101,14 +96,12 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
     
-    // Get delayed orders using streams
     public List<Order> getDelayedOrders() {
         return findAll().stream()
                 .filter(Order::isDelayed)
                 .collect(Collectors.toList());
     }
     
-    // Calculate total revenue using streams
     public BigDecimal calculateTotalRevenue(LocalDateTime startDate, LocalDateTime endDate) {
         return findAll().stream()
                 .filter(order -> order.getOrderDate().isAfter(startDate) && order.getOrderDate().isBefore(endDate))
@@ -117,7 +110,6 @@ public class OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
     
-    // Get order count by status
     public Map<Order.OrderStatus, Long> getOrderCountByStatus() {
         return findAll().stream()
                 .collect(Collectors.groupingBy(
@@ -126,7 +118,6 @@ public class OrderService {
                 ));
     }
     
-    // Get order count by type
     public Map<Order.OrderType, Long> getOrderCountByType() {
         return findAll().stream()
                 .collect(Collectors.groupingBy(
@@ -135,7 +126,6 @@ public class OrderService {
                 ));
     }
     
-    // Get orders grouped by supplier
     public Map<String, List<Order>> getOrdersGroupedBySupplier() {
         return findAll().stream()
                 .filter(order -> order.getSupplier() != null)
@@ -144,9 +134,8 @@ public class OrderService {
                 ));
     }
     
-    // Business Logic: Order processing with collections and exception handling
     
-    @Transactional
+    
     public Order createOrder(Order.OrderType type, Long supplierId, List<OrderItem> items) {
         // Validate supplier if provided
         Supplier supplier = null;
@@ -154,13 +143,10 @@ public class OrderService {
             supplier = supplierService.getSupplierById(supplierId);
         }
         
-        // Create order
         Order order = new Order(type, supplier);
         order = saveOrder(order);
         
-        // Add items to order
         for (OrderItem item : items) {
-            // Validate product exists
             Product product = productService.findById(item.getProduct().getId())
                     .orElseThrow(() -> new IllegalArgumentException("Product not found"));
             
@@ -168,8 +154,7 @@ public class OrderService {
             item.setOrder(order);
             orderItemRepository.save(item);
         }
-        
-        // Calculate total amount
+    
         order.calculateTotalAmount();
         return saveOrder(order);
     }
@@ -214,7 +199,7 @@ public class OrderService {
         }
         
         if (order.getType() == Order.OrderType.PURCHASE) {
-            // For purchase orders, increase stock when delivered
+            // For purchase orders, increase stock when delivered okay
             for (OrderItem item : order.getOrderItems()) {
                 productService.increaseStock(item.getProduct().getId(), item.getQuantity());
             }
@@ -243,7 +228,6 @@ public class OrderService {
         return saveOrder(order);
     }
     
-    // Search functionality
     public List<Order> searchOrders(String searchTerm) {
         return findAll().stream()
                 .filter(order -> 
@@ -253,7 +237,7 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
     
-    // Alert generation for order issues
+    // Alert generation
     public List<String> generateOrderAlerts() {
         List<String> alerts = new ArrayList<>();
         
@@ -276,7 +260,6 @@ public class OrderService {
         return alerts;
     }
     
-    // Recent orders (last 10)
     public List<Order> getRecentOrders() {
         return findAll().stream()
                 .sorted(Comparator.comparing(Order::getOrderDate).reversed())

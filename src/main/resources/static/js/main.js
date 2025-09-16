@@ -1,4 +1,3 @@
-// API Base URL
 const API_BASE_URL = '/api';
 
 // Utility functions
@@ -409,7 +408,6 @@ function closeModal(modalId) {
 
 // Navigation
 document.addEventListener('DOMContentLoaded', function() {
-    // Mobile menu toggle
     const hamburger = document.querySelector('.hamburger');
     const navMenu = document.querySelector('.nav-menu');
 
@@ -419,7 +417,6 @@ document.addEventListener('DOMContentLoaded', function() {
             navMenu.classList.toggle('active');
         });
 
-        // Close menu when clicking on a link
         document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
             hamburger.classList.remove('active');
             navMenu.classList.remove('active');
@@ -438,9 +435,6 @@ document.addEventListener('DOMContentLoaded', function() {
 async function generateReport() {
     try {
         showSuccess('Generating report... (Feature coming soon)');
-        // This would typically trigger a report generation API call
-        // const report = await ApiClient.get('/reports/inventory');
-        // downloadFile(report.url, 'inventory-report.pdf');
     } catch (error) {
         console.error('Failed to generate report:', error);
         showError('Failed to generate report. Please try again.');
@@ -463,7 +457,7 @@ function filterTable(tableId, searchTerm) {
 
     const rows = table.getElementsByTagName('tr');
     
-    for (let i = 1; i < rows.length; i++) { // Skip header row
+    for (let i = 1; i < rows.length; i++) { 
         const row = rows[i];
         const cells = row.getElementsByTagName('td');
         let found = false;
