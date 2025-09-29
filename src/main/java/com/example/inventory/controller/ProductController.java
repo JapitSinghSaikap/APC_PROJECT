@@ -3,6 +3,7 @@ package com.example.inventory.controller;
 import com.example.inventory.model.Product;
 import com.example.inventory.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -69,16 +70,25 @@ public class ProductController {
     }
     
     // DELETE /api/products/{id} - Delete product
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        Optional<Product> product = productService.findById(id);
-        if (product.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        
+   // Controller
+@DeleteMapping("/{id}")
+public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+    Optional<Product> product = productService.findById(id);
+    if (product.isEmpty()) {
+        return ResponseEntity.notFound().build();
+    }
+    try {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    } catch (DataIntegrityViolationException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                             .body("Cannot delete product: it is linked to existing orders or references.");
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                             .body("Internal server error while deleting product.");
     }
+}
+
     
     // GET /api/products/low-stock - Get low stock products
     @GetMapping("/low-stock")

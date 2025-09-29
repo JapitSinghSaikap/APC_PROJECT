@@ -1,174 +1,120 @@
-// API Base URL
+// ------------------ GLOBAL STATE ------------------ //
+let allOrders = [];
+let currentOrder = null;
+let orderItemIndex = 0;
+let availableProducts = [];
+let availableSuppliers = [];
+
+// ------------------ CONFIG ------------------ //
 const API_BASE_URL = '/api';
 
-// Utility functions
+// ------------------ API CLIENT WITH JWT ------------------ //
 class ApiClient {
-    static async get(endpoint) {
-        try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('GET request failed:', error);
-            throw error;
-        }
-    }
+    static getToken() { return localStorage.getItem('jwtToken'); }
 
-    static async post(endpoint, data) {
+    static async get(endpoint) { return this.request(endpoint, 'GET'); }
+    static async post(endpoint, data) { return this.request(endpoint, 'POST', data); }
+    static async put(endpoint, data) { return this.request(endpoint, 'PUT', data); }
+    static async delete(endpoint) { return this.request(endpoint, 'DELETE'); }
+
+    static async request(endpoint, method, data = null) {
         try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                method: 'POST',
+            const options = {
+                method,
                 headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('POST request failed:', error);
-            throw error;
-        }
-    }
+                    'Authorization': `Bearer ${this.getToken()}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+            if (data) options.body = JSON.stringify(data);
 
-    static async put(endpoint, data) {
-        try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            });
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
-        } catch (error) {
-            console.error('PUT request failed:', error);
-            throw error;
-        }
-    }
-
-    static async delete(endpoint) {
-        try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                method: 'DELETE'
-            });
-            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    alert('Session expired or unauthorized. Please log in again.');
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/login.html';
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.status === 204 ? null : await response.json();
         } catch (error) {
-            console.error('DELETE request failed:', error);
+            console.error(`${method} request failed:`, error);
             throw error;
         }
     }
 }
 
-// Dashboard functions
+// ------------------ DASHBOARD FUNCTIONS ------------------ //
 async function loadDashboardStats() {
     try {
-        // Load total products
         const products = await ApiClient.get('/products');
         document.getElementById('total-products').textContent = products.length || 0;
 
-        // Calculate low stock items
-        const lowStockItems = products.filter(product => product.stockQuantity <= product.minStockLevel);
+        const lowStockItems = products.filter(p => p.stockQuantity <= p.minStockLevel);
         document.getElementById('low-stock-items').textContent = lowStockItems.length || 0;
 
-        // Load suppliers
         const suppliers = await ApiClient.get('/suppliers');
-        const activeSuppliers = suppliers.filter(supplier => supplier.status === 'ACTIVE');
+        const activeSuppliers = suppliers.filter(s => s.status === 'ACTIVE');
         document.getElementById('total-suppliers').textContent = activeSuppliers.length || 0;
 
-        // Load orders
         const orders = await ApiClient.get('/orders');
-        const pendingOrders = orders.filter(order => order.status === 'PENDING');
+        allOrders = orders || [];
+        const pendingOrders = orders.filter(o => o.status === 'PENDING');
         document.getElementById('pending-orders').textContent = pendingOrders.length || 0;
-
     } catch (error) {
         console.error('Failed to load dashboard stats:', error);
-        // Show fallback data
-        document.getElementById('total-products').textContent = '0';
-        document.getElementById('low-stock-items').textContent = '0';
-        document.getElementById('total-suppliers').textContent = '0';
-        document.getElementById('pending-orders').textContent = '0';
+        ['total-products','low-stock-items','total-suppliers','pending-orders'].forEach(id => document.getElementById(id).textContent = '0');
     }
 }
 
-async function loadLowStockAlerts() {
+// ------------------ USER EMAIL ------------------ //
+async function loadUserEmail() {
+    const userEmailDiv = document.getElementById('user-email');
+    const token = ApiClient.getToken();
+
+     console.log('JWT Token:', token);
+
+    if (!token) {
+        window.location.href = '/login.html';
+        return;
+    }
+
+    // Try localStorage first
+    let storedEmail = localStorage.getItem('userEmail');
+    if (storedEmail) {
+        userEmailDiv.textContent = storedEmail;
+        return;
+    }
+
+    // Fetch from API
     try {
-        const alerts = await ApiClient.get('/dashboard/alerts');
-        const allAlerts = [
-            ...alerts.productAlerts,
-            ...alerts.supplierAlerts,
-            ...alerts.orderAlerts,
-            ...alerts.warehouseAlerts
-        ];
-        
-        const alertsContainer = document.getElementById('low-stock-alerts');
-        
-        if (allAlerts.length === 0) {
-            alertsContainer.innerHTML = '<p class="text-center" style="color: #22543d;">✓ All systems are running smoothly!</p>';
-            return;
-        }
-
-        alertsContainer.innerHTML = allAlerts.map(alert => `
-            <div class="alert-item">
-                <i class="fas fa-exclamation-triangle"></i>
-                <div>
-                    <span>${alert}</span>
-                </div>
-            </div>
-        `).join('');
-
+        const user = await ApiClient.get('/auth/me');
+        userEmailDiv.textContent = user.email || 'Unknown User';
+        localStorage.setItem('userEmail', user.email);
     } catch (error) {
-        console.error('Failed to load alerts:', error);
-        document.getElementById('low-stock-alerts').innerHTML = 
-            '<p class="error">Failed to load alerts. Please try again.</p>';
+        console.error('Failed to fetch user info:', error);
+        userEmailDiv.textContent = 'Not logged in';
     }
 }
 
-async function loadRecentOrders() {
-    try {
-        const orders = await ApiClient.get('/orders');
-        const recentOrders = orders
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 5);
-
-        const ordersContainer = document.getElementById('recent-orders');
-        
-        if (recentOrders.length === 0) {
-            ordersContainer.innerHTML = '<p class="text-center">No recent orders found.</p>';
-            return;
-        }
-
-        ordersContainer.innerHTML = recentOrders.map(order => `
-            <div class="order-item">
-                <div class="order-info">
-                    <h4>${order.orderNumber}</h4>
-                    <p>${formatDate(order.orderDate)} • $${order.totalAmount || '0.00'}</p>
-                </div>
-                <span class="order-status status-${order.status.toLowerCase()}">${order.status}</span>
-            </div>
-        `).join('');
-
-    } catch (error) {
-        console.error('Failed to load recent orders:', error);
-        document.getElementById('recent-orders').innerHTML = 
-            '<p class="error">Failed to load orders. Please try again.</p>';
+// ------------------ SIGN OUT ------------------ //
+function initSignOut() {
+    const signoutBtn = document.getElementById('signout-btn');
+    if(signoutBtn){
+        signoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('userEmail');
+            window.location.href = '/login.html';
+        });
     }
 }
 
-// Product management functions
+// ------------------ PRODUCTS ------------------ //
 async function loadProducts() {
     try {
         const products = await ApiClient.get('/products');
+        availableProducts = products || [];
         displayProducts(products);
     } catch (error) {
         console.error('Failed to load products:', error);
@@ -180,6 +126,11 @@ function displayProducts(products) {
     const tableBody = document.querySelector('#products-table tbody');
     if (!tableBody) return;
 
+    if(products.length === 0){
+        tableBody.innerHTML = '<tr><td colspan="8" class="text-center">No products found.</td></tr>';
+        return;
+    }
+
     tableBody.innerHTML = products.map(product => `
         <tr>
             <td>${product.name}</td>
@@ -190,12 +141,8 @@ function displayProducts(products) {
             <td>$${product.price}</td>
             <td>${product.warehouse?.name || 'N/A'}</td>
             <td class="table-actions">
-                <button class="btn btn-sm btn-secondary" onclick="editProduct(${product.id})">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
+                <button class="btn btn-sm btn-secondary" onclick="editProduct(${product.id})"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteProduct(${product.id})"><i class="fas fa-trash"></i> Delete</button>
             </td>
         </tr>
     `).join('');
@@ -215,10 +162,8 @@ async function addProduct(productData) {
 
 async function editProduct(productId) {
     try {
-        // Load dropdowns first
         await loadWarehouseOptions();
         await loadSupplierOptions();
-        
         const product = await ApiClient.get(`/products/${productId}`);
         document.getElementById('modal-title').textContent = 'Edit Product';
         populateProductForm(product);
@@ -231,7 +176,6 @@ async function editProduct(productId) {
 
 async function deleteProduct(productId) {
     if (!confirm('Are you sure you want to delete this product?')) return;
-
     try {
         await ApiClient.delete(`/products/${productId}`);
         showSuccess('Product deleted successfully!');
@@ -242,10 +186,11 @@ async function deleteProduct(productId) {
     }
 }
 
-// Supplier management functions
+// ------------------ SUPPLIERS & WAREHOUSES ------------------ //
 async function loadSuppliers() {
     try {
         const suppliers = await ApiClient.get('/suppliers');
+        availableSuppliers = suppliers || [];
         displaySuppliers(suppliers);
     } catch (error) {
         console.error('Failed to load suppliers:', error);
@@ -265,54 +210,13 @@ function displaySuppliers(suppliers) {
             <td>${supplier.contactPerson || 'N/A'}</td>
             <td><span class="order-status status-${supplier.status.toLowerCase()}">${supplier.status}</span></td>
             <td class="table-actions">
-                <button class="btn btn-sm btn-secondary" onclick="editSupplier(${supplier.id})">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${supplier.id})">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
+                <button class="btn btn-sm btn-secondary" onclick="editSupplier(${supplier.id})"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteSupplier(${supplier.id})"><i class="fas fa-trash"></i> Delete</button>
             </td>
         </tr>
     `).join('');
 }
 
-// Order management functions
-async function loadOrders() {
-    try {
-        const orders = await ApiClient.get('/orders');
-        allOrders = orders;
-        displayOrders(orders);
-    } catch (error) {
-        console.error('Failed to load orders:', error);
-        showError('Failed to load orders. Please try again.');
-    }
-}
-
-function displayOrders(orders) {
-    const tableBody = document.querySelector('#orders-table tbody');
-    if (!tableBody) return;
-
-    tableBody.innerHTML = orders.map(order => `
-        <tr>
-            <td>${order.orderNumber}</td>
-            <td>${order.type}</td>
-            <td>${order.supplier?.name || 'N/A'}</td>
-            <td>$${order.totalAmount || '0.00'}</td>
-            <td>${formatDate(order.orderDate)}</td>
-            <td><span class="order-status status-${order.status.toLowerCase()}">${order.status}</span></td>
-            <td class="table-actions">
-                <button class="btn btn-sm btn-secondary" onclick="viewOrder(${order.id})">
-                    <i class="fas fa-eye"></i> View
-                </button>
-                <button class="btn btn-sm btn-primary" onclick="updateOrderStatus(${order.id})">
-                    <i class="fas fa-edit"></i> Update
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
-
-// Warehouse management functions
 async function loadWarehouses() {
     try {
         const warehouses = await ApiClient.get('/warehouses');
@@ -327,137 +231,95 @@ function displayWarehouses(warehouses) {
     const tableBody = document.querySelector('#warehouses-table tbody');
     if (!tableBody) return;
 
-    tableBody.innerHTML = warehouses.map(warehouse => `
+    tableBody.innerHTML = warehouses.map(w => `
         <tr>
-            <td>${warehouse.name}</td>
-            <td>${warehouse.location}</td>
-            <td>${warehouse.products?.length || 0}</td>
-            <td>${formatDate(warehouse.createdAt)}</td>
+            <td>${w.name}</td>
+            <td>${w.location}</td>
+            <td>${w.products?.length || 0}</td>
+            <td>${formatDate(w.createdAt)}</td>
             <td class="table-actions">
-                <button class="btn btn-sm btn-secondary" onclick="editWarehouse(${warehouse.id})">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteWarehouse(${warehouse.id})">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
+                <button class="btn btn-sm btn-secondary" onclick="editWarehouse(${w.id})"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteWarehouse(${w.id})"><i class="fas fa-trash"></i> Delete</button>
             </td>
         </tr>
     `).join('');
 }
 
-// Utility functions
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+// ------------------ FORM MODALS & HELPERS ------------------ //
+function openModal(id) { const m=document.getElementById(id); if(m)m.style.display='block'; }
+function closeModal(id) { const m=document.getElementById(id); if(m){ m.style.display='none'; const f=m.querySelector('form'); if(f)f.reset(); } }
+
+function populateProductForm(product){
+    document.getElementById('product-name').value=product.name||'';
+    document.getElementById('product-sku').value=product.sku||'';
+    document.getElementById('product-category').value=product.category||'';
+    document.getElementById('product-price').value=product.price||'';
+    document.getElementById('product-stock').value=product.stockQuantity||'';
+    document.getElementById('product-min-stock').value=product.minStockLevel||'';
+    document.getElementById('product-warehouse').value=product.warehouse?.id||'';
+    document.getElementById('product-supplier').value=product.supplier?.id||'';
+    document.getElementById('product-description').value=product.description||'';
 }
 
-function showSuccess(message) {
-    showNotification(message, 'success');
+async function loadWarehouseOptions() {
+    try {
+        const warehouses = await ApiClient.get('/warehouses');
+        const select = document.getElementById('product-warehouse');
+        if(!select) return;
+        select.innerHTML='<option value="">Select Warehouse</option>';
+        warehouses.forEach(w=>{ const option = document.createElement('option'); option.value = w.id; option.textContent = w.name; select.appendChild(option); });
+    } catch (e) { console.error('Failed to load warehouses:', e); }
 }
 
-function showError(message) {
-    showNotification(message, 'error');
+async function loadSupplierOptions() {
+    try {
+        const suppliers = await ApiClient.get('/suppliers');
+        const select = document.getElementById('product-supplier');
+        if(!select) return;
+        select.innerHTML='<option value="">Select Supplier</option>';
+        suppliers.forEach(s=>{ const option = document.createElement('option'); option.value = s.id; option.textContent = s.name; select.appendChild(option); });
+    } catch (e) { console.error('Failed to load suppliers:', e); }
 }
 
+// ------------------ UTILITIES ------------------ //
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return isNaN(d) ? dateStr : d.toISOString().split('T')[0];
+}
+
+function showSuccess(msg) { showNotification(msg, 'success'); }
+function showError(msg) { showNotification(msg, 'error'); }
 function showNotification(message, type) {
-    // Remove existing notifications
-    const existing = document.querySelector('.notification');
-    if (existing) existing.remove();
-
-    // Create notification
+    const existing = document.querySelector('.notification'); if(existing) existing.remove();
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 5px;
-        z-index: 3000;
-        max-width: 300px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    `;
-
+    notification.style.cssText = `position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem; border-radius: 5px; z-index: 3000; max-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);`;
     document.body.appendChild(notification);
-
-    // Auto remove after 3 seconds
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
-        }
-    }, 3000);
+    setTimeout(()=>notification.remove(),3000);
 }
 
-// Modal functions
-function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'block';
-    }
-}
-
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-        // Reset form if exists
-        const form = modal.querySelector('form');
-        if (form) form.reset();
-    }
-}
-
-// Navigation
-document.addEventListener('DOMContentLoaded', function() {
-    // Mobile menu toggle
-    const hamburger = document.querySelector('.hamburger');
-    const navMenu = document.querySelector('.nav-menu');
-
-    if (hamburger && navMenu) {
-        hamburger.addEventListener('click', function() {
-            hamburger.classList.toggle('active');
-            navMenu.classList.toggle('active');
-        });
-
-        // Close menu when clicking on a link
-        document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
-            hamburger.classList.remove('active');
-            navMenu.classList.remove('active');
-        }));
-    }
-
-    // Close modals when clicking outside
-    window.addEventListener('click', function(event) {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = 'none';
-        }
+function validateRequired(formId) {
+    const form = document.getElementById(formId);
+    if (!form) return false;
+    let isValid = true;
+    form.querySelectorAll('[required]').forEach(f=>{
+        if(!f.value.trim()){ f.style.borderColor='#e53e3e'; isValid=false; }
+        else f.style.borderColor='#e2e8f0';
     });
-});
+    return isValid;
+}
 
-
-
-// Global state
-let allOrders = [];
-let currentOrder = null;
-let orderItemIndex = 0;
-let availableProducts = [];
-let availableSuppliers = [];
-
-// Download CSV helper
+// ------------------ CSV REPORT FUNCTIONALITY ------------------ //
 function downloadCSV(data, filename = 'report.csv') {
-    if (!data || data.length === 0) {
-        alert('No data available to export.');
-        return;
-    }
+    if (!data || data.length === 0) { alert('No data available to export.'); return; }
 
     const csvRows = [];
     const headers = Object.keys(data[0]);
     csvRows.push(headers.join(','));
 
-    data.forEach(row => {
-        csvRows.push(headers.map(h => `"${row[h]}"`).join(','));
-    });
+    data.forEach(row => { csvRows.push(headers.map(h => `"${row[h]}"`).join(',')); });
 
     const csvString = csvRows.join('\n');
     const blob = new Blob([csvString], { type: 'text/csv' });
@@ -472,36 +334,18 @@ function downloadCSV(data, filename = 'report.csv') {
     document.body.removeChild(a);
 }
 
-
-function formatDate(dateStr) {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
-    return isNaN(d) ? dateStr : d.toISOString().split('T')[0];
-}
-
-
 async function generateReport() {
     try {
-        
-        if (typeof loadOrders === 'function') {
-            await loadOrders();  
-        }
-
         if (!allOrders || allOrders.length === 0) {
-            console.warn('No orders available. allOrders is empty:', allOrders);
             alert('No orders available to export.');
             return;
         }
 
-        
         const statusFilter = document.getElementById('statusFilter')?.value || '';
         const typeFilter = document.getElementById('typeFilter')?.value || '';
         const supplierFilter = document.getElementById('supplierFilter')?.value || '';
         const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
 
-        console.log('Filters applied:', { statusFilter, typeFilter, supplierFilter, searchTerm });
-
-       
         const filteredOrders = allOrders.filter(order => {
             const matchesStatus = !statusFilter || order.status === statusFilter;
             const matchesType = !typeFilter || order.type === typeFilter;
@@ -510,13 +354,11 @@ async function generateReport() {
             return matchesStatus && matchesType && matchesSupplier && matchesSearch;
         });
 
-        console.log('Filtered orders count:', filteredOrders.length);
-
         if (filteredOrders.length === 0) {
             alert('No orders match the current filters.');
             return;
         }
-        //excel ka format 
+
         const csvData = filteredOrders.map(order => ({
             'Order Number': order.orderNumber,
             'Type': order.type,
@@ -528,109 +370,93 @@ async function generateReport() {
 
         downloadCSV(csvData, 'orders-report.csv');
         alert('CSV report generated successfully!');
-
     } catch (error) {
         console.error('Failed to generate report:', error);
         alert('Failed to generate report. Please try again.');
     }
 }
 
-
-
-
-// Search and filter functions
-function filterTable(tableId, searchTerm) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    const rows = table.getElementsByTagName('tr');
-    
-    for (let i = 1; i < rows.length; i++) { // Skip header row
-        const row = rows[i];
-        const cells = row.getElementsByTagName('td');
-        let found = false;
-
-        for (let j = 0; j < cells.length; j++) {
-            if (cells[j].textContent.toLowerCase().includes(searchTerm.toLowerCase())) {
-                found = true;
-                break;
-            }
-        }
-
-        row.style.display = found ? '' : 'none';
-    }
-}
-
-// Form validation
-function validateRequired(formId) {
-    const form = document.getElementById(formId);
-    if (!form) return false;
-
-    const requiredFields = form.querySelectorAll('[required]');
-    let isValid = true;
-
-    requiredFields.forEach(field => {
-        if (!field.value.trim()) {
-            field.style.borderColor = '#e53e3e';
-            isValid = false;
-        } else {
-            field.style.borderColor = '#e2e8f0';
-        }
-    });
-
-    return isValid;
-}
-
-// Load warehouses and suppliers into dropdowns
-async function loadWarehouseOptions() {
+// ------------------ DASHBOARD ALERTS & RECENT ORDERS ------------------ //
+async function loadLowStockAlerts() {
     try {
-        console.log('Fetching warehouses...');
-        const warehouses = await ApiClient.get('/warehouses');
-        console.log('Warehouses received:', warehouses);
-        const warehouseSelect = document.getElementById('product-warehouse');
-        if (warehouseSelect) {
-            warehouseSelect.innerHTML = '<option value="">Select Warehouse</option>';
-            warehouses.forEach(warehouse => {
-                warehouseSelect.innerHTML += `<option value="${warehouse.id}">${warehouse.name}</option>`;
-            });
-            console.log('Warehouse options loaded:', warehouseSelect.children.length);
-        } else {
-            console.error('Warehouse select element not found!');
+        const alertsResponse = await ApiClient.get('/dashboard/alerts');
+        const allAlerts = [
+            ...(alertsResponse.productAlerts || []),
+            ...(alertsResponse.supplierAlerts || []),
+            ...(alertsResponse.orderAlerts || []),
+            ...(alertsResponse.warehouseAlerts || [])
+        ];
+
+        const alertsContainer = document.getElementById('low-stock-alerts');
+        if (!alertsContainer) return;
+
+        if (allAlerts.length === 0) {
+            alertsContainer.innerHTML = '<p class="text-center" style="color: #22543d;">✓ All systems are running smoothly!</p>';
+            return;
         }
+
+        alertsContainer.innerHTML = allAlerts.map(alert => `
+            <div class="alert-item">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div><span>${alert}</span></div>
+            </div>
+        `).join('');
+
     } catch (error) {
-        console.error('Failed to load warehouses:', error);
+        console.error('Failed to load low stock alerts:', error);
+        const alertsContainer = document.getElementById('low-stock-alerts');
+        if (alertsContainer) alertsContainer.innerHTML = '<p class="error">Failed to load alerts. Please try again.</p>';
     }
 }
 
-async function loadSupplierOptions() {
+async function loadRecentOrders() {
     try {
-        console.log('Fetching suppliers...');
-        const suppliers = await ApiClient.get('/suppliers');
-        console.log('Suppliers received:', suppliers);
-        const supplierSelect = document.getElementById('product-supplier');
-        if (supplierSelect) {
-            supplierSelect.innerHTML = '<option value="">Select Supplier</option>';
-            suppliers.forEach(supplier => {
-                supplierSelect.innerHTML += `<option value="${supplier.id}">${supplier.name}</option>`;
-            });
-            console.log('Supplier options loaded:', supplierSelect.children.length);
-        } else {
-            console.error('Supplier select element not found!');
+        const orders = await ApiClient.get('/orders');
+        const recentOrders = (orders || []).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5);
+
+        const ordersContainer = document.getElementById('recent-orders');
+        if (!ordersContainer) return;
+
+        if (recentOrders.length === 0) {
+            ordersContainer.innerHTML = '<p class="text-center">No recent orders found.</p>';
+            return;
         }
+
+        ordersContainer.innerHTML = recentOrders.map(order => `
+            <div class="order-item">
+                <div class="order-info">
+                    <h4>${order.orderNumber}</h4>
+                    <p>${formatDate(order.orderDate)} • $${order.totalAmount || '0.00'}</p>
+                </div>
+                <span class="order-status status-${order.status.toLowerCase()}">${order.status}</span>
+            </div>
+        `).join('');
+
     } catch (error) {
-        console.error('Failed to load suppliers:', error);
+        console.error('Failed to load recent orders:', error);
+        const ordersContainer = document.getElementById('recent-orders');
+        if (ordersContainer) ordersContainer.innerHTML = '<p class="error">Failed to load orders. Please try again.</p>';
     }
 }
 
-// Function to populate form for editing
-function populateProductForm(product) {
-    document.getElementById('product-name').value = product.name || '';
-    document.getElementById('product-sku').value = product.sku || '';
-    document.getElementById('product-category').value = product.category || '';
-    document.getElementById('product-price').value = product.price || '';
-    document.getElementById('product-stock').value = product.stockQuantity || '';
-    document.getElementById('product-min-stock').value = product.minStockLevel || '';
-    document.getElementById('product-warehouse').value = product.warehouse?.id || '';
-    document.getElementById('product-supplier').value = product.supplier?.id || '';
-    document.getElementById('product-description').value = product.description || '';
-}
+// ------------------ INITIAL LOAD ------------------ //
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadUserEmail();
+    initSignOut();
+
+    await loadDashboardStats();
+    await loadProducts();
+    await loadSuppliers();
+    await loadLowStockAlerts();
+    await loadRecentOrders();
+    await loadWarehouses();
+
+    const hamburger = document.querySelector('.hamburger');
+    const navMenu = document.querySelector('.nav-menu');
+    if(hamburger && navMenu){
+        hamburger.addEventListener('click', ()=>{hamburger.classList.toggle('active'); navMenu.classList.toggle('active');});
+        document.querySelectorAll('.nav-link').forEach(n=>n.addEventListener('click',()=>{hamburger.classList.remove('active');navMenu.classList.remove('active');}));
+    }
+
+    window.addEventListener('click', e => { if(e.target.classList.contains('modal')) e.target.style.display='none'; });
+});

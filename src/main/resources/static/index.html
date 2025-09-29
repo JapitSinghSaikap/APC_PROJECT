@@ -9,26 +9,35 @@
 </head>
 <body>
     <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <i class="fas fa-warehouse"></i>
-                <span>Inventory Manager</span>
+        <nav class="navbar" style="background-color:#ffffff; border-bottom:1px solid #e5e7eb; padding:0.5rem 1rem; display:flex; justify-content:space-between; align-items:center; color:#374151; font-family:sans-serif;">
+            <div class="nav-container" style="display:flex; align-items:center; width:100%; justify-content:space-between;">
+                <!-- Logo -->
+                <div class="nav-logo" style="display:flex; align-items:center; font-weight:bold; font-size:1.2rem; color:#2563eb;">
+                    <i class="fas fa-warehouse" style="margin-right:0.5rem;"></i>
+                    <span>Inventory Manager</span>
+                </div>
+
+              
+                <ul class="nav-menu" style="display:flex; list-style:none; margin:0; padding:0;">
+                    <li><a href="index.html" class="nav-link active" style="color:#6b7280; text-decoration:none; margin:0 0.75rem; display:flex; align-items:center; gap:0.25rem;"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="inventory.html" class="nav-link" style="color:#2563eb; text-decoration:none; margin:0 0.75rem; display:flex; align-items:center; gap:0.25rem; background-color:#eff6ff; padding:0.25rem 0.5rem; border-radius:0.375rem;"><i class="fas fa-boxes"></i> Inventory</a></li>
+                    <li><a href="suppliers.html" class="nav-link" style="color:#6b7280; text-decoration:none; margin:0 0.75rem; display:flex; align-items:center; gap:0.25rem;"><i class="fas fa-truck"></i> Suppliers</a></li>
+                    <li><a href="orders.html" class="nav-link" style="color:#6b7280; text-decoration:none; margin:0 0.75rem; display:flex; align-items:center; gap:0.25rem;"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+                    <li><a href="warehouses.html" class="nav-link" style="color:#6b7280; text-decoration:none; margin:0 0.75rem; display:flex; align-items:center; gap:0.25rem;"><i class="fas fa-building"></i> Warehouses</a></li>
+                </ul>
+
+               
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <div id="user-email" style="color: #374151;font-weight: 500;font-size: 0.9rem;padding: 0.25rem 0.5rem;background-color: #f3f4f6;border-radius: 0.375rem;max-width: 40rem;white-space: normal;overflow-wrap: anywhere; text-align: center;">
+                        Loading...
+                    </div>
+                    <button id="signout-btn" style="background-color:#ef4444; color:white; border:none; padding:0.4rem 0.8rem; border-radius:0.375rem; cursor:pointer; font-weight:500; display:flex; align-items:center; gap:0.3rem; font-size:0.85rem;">
+                        <i class="fas fa-sign-out-alt"></i> Sign Out
+                    </button>
+                </div>
             </div>
-            <ul class="nav-menu">
-                <li><a href="index.html" class="nav-link active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                <li><a href="inventory.html" class="nav-link"><i class="fas fa-boxes"></i> Inventory</a></li>
-                <li><a href="suppliers.html" class="nav-link"><i class="fas fa-truck"></i> Suppliers</a></li>
-                <li><a href="orders.html" class="nav-link"><i class="fas fa-shopping-cart"></i> Orders</a></li>
-                <li><a href="warehouses.html" class="nav-link"><i class="fas fa-building"></i> Warehouses</a></li>
-            </ul>
-            <div class="hamburger">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
-        </div>
-    </nav>
+        </nav>
+
 
     <!-- Header Section -->
     <header class="header">
@@ -50,9 +59,7 @@
             <!-- Stats Cards -->
             <section class="stats-grid fade-in">
                 <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-boxes"></i>
-                    </div>
+                    <div class="stat-icon"><i class="fas fa-boxes"></i></div>
                     <div class="stat-value" id="total-products">0</div>
                     <div class="stat-label">Total Products</div>
                 </div>
@@ -85,19 +92,12 @@
                     <!-- Low Stock Alerts -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">
-                                <i class="fas fa-exclamation-triangle text-warning mr-2"></i>Low Stock Alerts
-                            </h3>
-                            <button class="btn btn-sm btn-outline" onclick="loadLowStockAlerts()">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
+                            <h3 class="card-title"><i class="fas fa-exclamation-triangle text-warning mr-2"></i>Low Stock Alerts</h3>
+                            <button class="btn btn-sm btn-outline" onclick="loadLowStockAlerts()"><i class="fas fa-sync-alt"></i></button>
                         </div>
                         <div class="card-body">
                             <div id="low-stock-alerts" class="alert-list">
-                                <div class="empty-state">
-                                    <i class="fas fa-clipboard-check"></i>
-                                    <p>No low stock alerts</p>
-                                </div>
+                                <div class="empty-state"><i class="fas fa-clipboard-check"></i><p>No low stock alerts</p></div>
                             </div>
                         </div>
                     </div>
@@ -105,19 +105,12 @@
                     <!-- Recent Orders -->
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">
-                                <i class="fas fa-clock text-primary mr-2"></i>Recent Orders
-                            </h3>
-                            <button class="btn btn-sm btn-outline" onclick="loadRecentOrders()">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
+                            <h3 class="card-title"><i class="fas fa-clock text-primary mr-2"></i>Recent Orders</h3>
+                            <button class="btn btn-sm btn-outline" onclick="loadRecentOrders()"><i class="fas fa-sync-alt"></i></button>
                         </div>
                         <div class="card-body">
                             <div id="recent-orders" class="order-list">
-                                <div class="empty-state">
-                                    <i class="fas fa-shopping-cart"></i>
-                                    <p>No recent orders</p>
-                                </div>
+                                <div class="empty-state"><i class="fas fa-shopping-cart"></i><p>No recent orders</p></div>
                             </div>
                         </div>
                     </div>
@@ -126,28 +119,14 @@
                 <!-- Quick Actions -->
                 <div class="card quick-actions-card fade-in">
                     <div class="card-header">
-                        <h3 class="card-title">
-                            <i class="fas fa-bolt mr-2"></i>Quick Actions
-                        </h3>
+                        <h3 class="card-title"><i class="fas fa-bolt mr-2"></i>Quick Actions</h3>
                     </div>
                     <div class="card-body">
                         <div class="quick-actions-grid">
-                            <button class="btn btn-primary quick-action-btn" onclick="window.location.href='inventory.html'">
-                                <i class="fas fa-plus mb-2"></i>
-                                <span>Add Product</span>
-                            </button>
-                            <button class="btn btn-success quick-action-btn" onclick="window.location.href='suppliers.html'">
-                                <i class="fas fa-user-plus mb-2"></i>
-                                <span>Add Supplier</span>
-                            </button>
-                            <button class="btn btn-info quick-action-btn" onclick="window.location.href='orders.html'">
-                                <i class="fas fa-shopping-cart mb-2"></i>
-                                <span>Create Order</span>
-                            </button>
-                            <button class="btn btn-warning quick-action-btn" onclick="generateReport()">
-                                <i class="fas fa-file-download mb-2"></i>
-                                <span>Generate Report</span>
-                            </button>
+                            <button class="btn btn-primary quick-action-btn" onclick="window.location.href='inventory.html'"><i class="fas fa-plus mb-2"></i><span>Add Product</span></button>
+                            <button class="btn btn-success quick-action-btn" onclick="window.location.href='suppliers.html'"><i class="fas fa-user-plus mb-2"></i><span>Add Supplier</span></button>
+                            <button class="btn btn-info quick-action-btn" onclick="window.location.href='orders.html'"><i class="fas fa-shopping-cart mb-2"></i><span>Create Order</span></button>
+                            <button class="btn btn-warning quick-action-btn" onclick="generateReport()"><i class="fas fa-file-download mb-2"></i><span>Generate Report</span></button>
                         </div>
                     </div>
                 </div>
@@ -158,7 +137,20 @@
     <!-- Scripts -->
     <script src="js/main.js"></script>
     <script>
-        // Initialize dashboard when page loads
+        // Display logged-in user email in navbar
+        const userEmailDiv = document.getElementById('user-email');
+        const userEmail = localStorage.getItem('userEmail'); // Set this on login
+        if(userEmail) userEmailDiv.textContent = userEmail;
+        else userEmailDiv.textContent = 'Not logged in';
+
+        // Sign out button functionality
+        document.getElementById('signout-btn').addEventListener('click', () => {
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('userEmail');
+            window.location.href = '/login.html';
+        });
+
+        // Initialize dashboard stats
         document.addEventListener('DOMContentLoaded', function() {
             loadDashboardStats();
             loadLowStockAlerts();
