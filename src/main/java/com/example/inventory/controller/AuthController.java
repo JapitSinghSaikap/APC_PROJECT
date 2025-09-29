@@ -4,7 +4,7 @@ import com.example.inventory.model.User;
 import com.example.inventory.security.JwtService;
 import com.example.inventory.service.UserService;
 
-import io.jsonwebtoken.Claims;
+// import io.jsonwebtoken.Claims;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

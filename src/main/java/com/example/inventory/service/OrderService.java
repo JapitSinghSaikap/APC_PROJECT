@@ -17,64 +17,69 @@ import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
-    
+
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final ProductService productService;
     private final SupplierService supplierService;
-    
+
     @Autowired
-    public OrderService(OrderRepository orderRepository, 
-                       OrderItemRepository orderItemRepository,
-                       ProductService productService,
-                       SupplierService supplierService) {
+    public OrderService(OrderRepository orderRepository,
+                        OrderItemRepository orderItemRepository,
+                        ProductService productService,
+                        SupplierService supplierService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.productService = productService;
         this.supplierService = supplierService;
     }
-    
-    // CRUD Operations hai saare yeh kuch khas nhi
+
+    // ===================== CRUD =====================
     public Order saveOrder(Order order) {
         return orderRepository.save(order);
     }
-    
+
     public Optional<Order> findById(Long id) {
         return orderRepository.findById(id);
     }
-    
+
     public Order getOrderById(Long id) {
         return findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + id));
     }
-    
+
     public Optional<Order> findByOrderNumber(String orderNumber) {
         return orderRepository.findByOrderNumber(orderNumber);
     }
-    
+
     public List<Order> findAll() {
         return orderRepository.findAll();
     }
-    
-    public void deleteOrder(Long id) {
-        orderRepository.deleteById(id);
-    }
-    
-   
-    
 
+    @Transactional
+    public void deleteOrder(Long orderId) {
+        Order order = getOrderById(orderId);
+
+        // delete associated order items first
+        for (OrderItem item : order.getOrderItems()) {
+            orderItemRepository.delete(item);
+        }
+
+        orderRepository.delete(order);
+    }
+
+    // ===================== Filtering & Mapping =====================
     public List<Order> getOrdersByStatus(Order.OrderStatus status) {
         return findAll().stream()
                 .filter(order -> order.getStatus() == status)
                 .collect(Collectors.toList());
     }
-    
+
     public List<Order> getOrdersByType(Order.OrderType type) {
         return findAll().stream()
                 .filter(order -> order.getType() == type)
                 .collect(Collectors.toList());
     }
-    
 
     public List<Order> filterOrders(Predicate<Order> criteria) {
         return findAll().stream()
@@ -87,21 +92,21 @@ public class OrderService {
                 .map(mapper)
                 .collect(Collectors.toList());
     }
-    
-    
+
+    // ===================== Alerts & Reports =====================
     public List<Order> getPendingOrders() {
         return findAll().stream()
                 .filter(Order::isPending)
                 .sorted(Comparator.comparing(Order::getOrderDate))
                 .collect(Collectors.toList());
     }
-    
+
     public List<Order> getDelayedOrders() {
         return findAll().stream()
                 .filter(Order::isDelayed)
                 .collect(Collectors.toList());
     }
-    
+
     public BigDecimal calculateTotalRevenue(LocalDateTime startDate, LocalDateTime endDate) {
         return findAll().stream()
                 .filter(order -> order.getOrderDate().isAfter(startDate) && order.getOrderDate().isBefore(endDate))
@@ -109,62 +114,87 @@ public class OrderService {
                 .map(Order::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
-    
+
     public Map<Order.OrderStatus, Long> getOrderCountByStatus() {
         return findAll().stream()
-                .collect(Collectors.groupingBy(
-                        Order::getStatus,
-                        Collectors.counting()
-                ));
+                .collect(Collectors.groupingBy(Order::getStatus, Collectors.counting()));
     }
-    
+
     public Map<Order.OrderType, Long> getOrderCountByType() {
         return findAll().stream()
-                .collect(Collectors.groupingBy(
-                        Order::getType,
-                        Collectors.counting()
-                ));
+                .collect(Collectors.groupingBy(Order::getType, Collectors.counting()));
     }
-    
+
     public Map<String, List<Order>> getOrdersGroupedBySupplier() {
         return findAll().stream()
                 .filter(order -> order.getSupplier() != null)
-                .collect(Collectors.groupingBy(
-                        order -> order.getSupplier().getName()
-                ));
+                .collect(Collectors.groupingBy(order -> order.getSupplier().getName()));
     }
-    
-    
-    
+
+    // ===================== CREATE / UPDATE =====================
+    @Transactional
     public Order createOrder(Order.OrderType type, Long supplierId, List<OrderItem> items) {
-        // Validate supplier if provided
         Supplier supplier = null;
         if (supplierId != null) {
             supplier = supplierService.getSupplierById(supplierId);
         }
-        
+
         Order order = new Order(type, supplier);
         order = saveOrder(order);
-        
-        for (OrderItem item : items) {
-            Product product = productService.findById(item.getProduct().getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Product not found"));
-            
-            item.setProduct(product);
-            item.setOrder(order);
-            orderItemRepository.save(item);
+
+        if (items != null) {
+            for (OrderItem item : items) {
+                Product product = productService.findById(item.getProduct().getId())
+                        .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+
+                item.setProduct(product);
+                item.setUnitPrice(product.getPrice());
+                item.setOrder(order);
+
+                orderItemRepository.save(item); // save individually
+                order.addOrderItem(item);       // attach to order
+            }
         }
-    
+
         order.calculateTotalAmount();
         return saveOrder(order);
     }
-    
+
+    @Transactional
+    public Order updateOrderItems(Long orderId, List<OrderItem> updatedItems) {
+        Order order = getOrderById(orderId);
+
+        // Delete existing items
+        for (OrderItem item : new ArrayList<>(order.getOrderItems())) {
+            orderItemRepository.delete(item);
+        }
+        order.getOrderItems().clear();
+
+        // Add new/updated items
+        if (updatedItems != null) {
+            for (OrderItem item : updatedItems) {
+                Product product = productService.findById(item.getProduct().getId())
+                        .orElseThrow(() -> new IllegalArgumentException("Product not found"));
+
+                item.setProduct(product);
+                item.setUnitPrice(product.getPrice());
+                item.setOrder(order);
+
+                orderItemRepository.save(item);
+                order.addOrderItem(item);
+            }
+        }
+
+        order.calculateTotalAmount();
+        return saveOrder(order);
+    }
+
+    // ===================== PROCESS ORDERS =====================
     @Transactional
     public Order processOrder(Long orderId) {
         Order order = getOrderById(orderId);
-        
+
         if (order.getType() == Order.OrderType.SALE) {
-            // For sales orders, reduce stock
             for (OrderItem item : order.getOrderItems()) {
                 try {
                     productService.reduceStock(item.getProduct().getId(), item.getQuantity());
@@ -173,93 +203,92 @@ public class OrderService {
                 }
             }
         }
-        
+
         order.confirm();
         return saveOrder(order);
     }
-    
+
     @Transactional
     public Order shipOrder(Long orderId) {
         Order order = getOrderById(orderId);
-        
+
         if (order.getStatus() != Order.OrderStatus.CONFIRMED) {
             throw new IllegalStateException("Order must be confirmed before shipping");
         }
-        
+
         order.ship();
         return saveOrder(order);
     }
-    
+
     @Transactional
     public Order deliverOrder(Long orderId) {
         Order order = getOrderById(orderId);
-        
+
         if (order.getStatus() != Order.OrderStatus.SHIPPED) {
             throw new IllegalStateException("Order must be shipped before delivery");
         }
-        
+
         if (order.getType() == Order.OrderType.PURCHASE) {
-            // For purchase orders, increase stock when delivered okay
             for (OrderItem item : order.getOrderItems()) {
                 productService.increaseStock(item.getProduct().getId(), item.getQuantity());
             }
         }
-        
+
         order.deliver();
         return saveOrder(order);
     }
-    
+
     @Transactional
     public Order cancelOrder(Long orderId) {
         Order order = getOrderById(orderId);
-        
+
         if (order.getStatus() == Order.OrderStatus.DELIVERED) {
             throw new IllegalStateException("Cannot cancel delivered order");
         }
-        
-        // If order was processed and is a sale order, restore stock
+
         if (order.getStatus() != Order.OrderStatus.PENDING && order.getType() == Order.OrderType.SALE) {
             for (OrderItem item : order.getOrderItems()) {
                 productService.increaseStock(item.getProduct().getId(), item.getQuantity());
             }
         }
-        
+
         order.cancel();
         return saveOrder(order);
     }
-    
+
+    // ===================== SEARCH =====================
     public List<Order> searchOrders(String searchTerm) {
         return findAll().stream()
-                .filter(order -> 
-                    order.getOrderNumber().toLowerCase().contains(searchTerm.toLowerCase()) ||
-                    (order.getSupplier() != null && order.getSupplier().getName().toLowerCase().contains(searchTerm.toLowerCase()))
+                .filter(order ->
+                        order.getOrderNumber().toLowerCase().contains(searchTerm.toLowerCase()) ||
+                        (order.getSupplier() != null &&
+                         order.getSupplier().getName().toLowerCase().contains(searchTerm.toLowerCase()))
                 )
                 .collect(Collectors.toList());
     }
-    
-    // Alert generation
+
+    // ===================== ALERTS =====================
     public List<String> generateOrderAlerts() {
         List<String> alerts = new ArrayList<>();
-        
-        // Pending orders alert
+
         long pendingCount = getPendingOrders().size();
         if (pendingCount > 0) {
             alerts.add(String.format("PENDING ORDERS: %d orders awaiting processing", pendingCount));
         }
-        
-        // Delayed orders alert
+
         List<Order> delayedOrders = getDelayedOrders();
         if (!delayedOrders.isEmpty()) {
             alerts.add(String.format("DELAYED ORDERS: %d orders past expected delivery date", delayedOrders.size()));
             alerts.addAll(delayedOrders.stream()
-                    .map(order -> String.format("  - Order %s (Expected: %s)", 
-                            order.getOrderNumber(), 
+                    .map(order -> String.format("  - Order %s (Expected: %s)",
+                            order.getOrderNumber(),
                             order.getExpectedDeliveryDate()))
                     .collect(Collectors.toList()));
         }
+
         return alerts;
     }
-    
+
     public List<Order> getRecentOrders() {
         return findAll().stream()
                 .sorted(Comparator.comparing(Order::getOrderDate).reversed())

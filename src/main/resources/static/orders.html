@@ -482,8 +482,8 @@
                     response = await ApiClient.post('/orders', orderData);
                 }
 
-                // ✅ Use backend-calculated totalAmount
-                const savedOrder = response; // ApiClient already returns JSON
+              
+                const savedOrder = response; 
                 if (savedOrder && typeof savedOrder.totalAmount !== "undefined") {
                     const totalAmountEl = document.getElementById('totalAmount');
                     if (totalAmountEl) {
@@ -515,7 +515,7 @@
                 document.getElementById('orderStatus').value = order.status;
                 document.getElementById('supplierId').value = order.supplier ? order.supplier.id : '';
                 
-                // Format dates for datetime-local input
+                
                 document.getElementById('orderDate').value = formatDateForInput(order.orderDate);
                 if (order.expectedDeliveryDate) {
                     document.getElementById('expectedDeliveryDate').value = formatDateForInput(order.expectedDeliveryDate);
@@ -662,7 +662,7 @@
             return date.toISOString().slice(0, 16);
         }
 
-        // Close modals when clicking outside
+       
         window.onclick = function(event) {
             const orderModal = document.getElementById('orderModal');
             const detailsModal = document.getElementById('orderDetailsModal');
