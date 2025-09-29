@@ -1,3 +1,4 @@
+// API Base URL
 const API_BASE_URL = '/api';
 
 // Utility functions
@@ -279,6 +280,7 @@ function displaySuppliers(suppliers) {
 async function loadOrders() {
     try {
         const orders = await ApiClient.get('/orders');
+        allOrders = orders;
         displayOrders(orders);
     } catch (error) {
         console.error('Failed to load orders:', error);
@@ -408,6 +410,7 @@ function closeModal(modalId) {
 
 // Navigation
 document.addEventListener('DOMContentLoaded', function() {
+    // Mobile menu toggle
     const hamburger = document.querySelector('.hamburger');
     const navMenu = document.querySelector('.nav-menu');
 
@@ -417,6 +420,7 @@ document.addEventListener('DOMContentLoaded', function() {
             navMenu.classList.toggle('active');
         });
 
+        // Close menu when clicking on a link
         document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
             hamburger.classList.remove('active');
             navMenu.classList.remove('active');
@@ -431,24 +435,108 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Export/Report functions
+
+
+// Global state
+let allOrders = [];
+let currentOrder = null;
+let orderItemIndex = 0;
+let availableProducts = [];
+let availableSuppliers = [];
+
+// Download CSV helper
+function downloadCSV(data, filename = 'report.csv') {
+    if (!data || data.length === 0) {
+        alert('No data available to export.');
+        return;
+    }
+
+    const csvRows = [];
+    const headers = Object.keys(data[0]);
+    csvRows.push(headers.join(','));
+
+    data.forEach(row => {
+        csvRows.push(headers.map(h => `"${row[h]}"`).join(','));
+    });
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', filename);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+
+function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    return isNaN(d) ? dateStr : d.toISOString().split('T')[0];
+}
+
+
 async function generateReport() {
     try {
-        showSuccess('Generating report... (Feature coming soon)');
+        
+        if (typeof loadOrders === 'function') {
+            await loadOrders();  
+        }
+
+        if (!allOrders || allOrders.length === 0) {
+            console.warn('No orders available. allOrders is empty:', allOrders);
+            alert('No orders available to export.');
+            return;
+        }
+
+        
+        const statusFilter = document.getElementById('statusFilter')?.value || '';
+        const typeFilter = document.getElementById('typeFilter')?.value || '';
+        const supplierFilter = document.getElementById('supplierFilter')?.value || '';
+        const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+
+        console.log('Filters applied:', { statusFilter, typeFilter, supplierFilter, searchTerm });
+
+       
+        const filteredOrders = allOrders.filter(order => {
+            const matchesStatus = !statusFilter || order.status === statusFilter;
+            const matchesType = !typeFilter || order.type === typeFilter;
+            const matchesSupplier = !supplierFilter || (order.supplier && order.supplier.id.toString() === supplierFilter);
+            const matchesSearch = !searchTerm || order.orderNumber.toLowerCase().includes(searchTerm);
+            return matchesStatus && matchesType && matchesSupplier && matchesSearch;
+        });
+
+        console.log('Filtered orders count:', filteredOrders.length);
+
+        if (filteredOrders.length === 0) {
+            alert('No orders match the current filters.');
+            return;
+        }
+        //excel ka format 
+        const csvData = filteredOrders.map(order => ({
+            'Order Number': order.orderNumber,
+            'Type': order.type,
+            'Status': order.status,
+            'Supplier': order.supplier ? order.supplier.name : 'N/A',
+            'Order Date': formatDate(order.orderDate),
+            'Total Amount': (order.totalAmount || 0).toFixed(2)
+        }));
+
+        downloadCSV(csvData, 'orders-report.csv');
+        alert('CSV report generated successfully!');
+
     } catch (error) {
         console.error('Failed to generate report:', error);
-        showError('Failed to generate report. Please try again.');
+        alert('Failed to generate report. Please try again.');
     }
 }
 
-function downloadFile(url, filename) {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
+
+
 
 // Search and filter functions
 function filterTable(tableId, searchTerm) {
@@ -457,7 +545,7 @@ function filterTable(tableId, searchTerm) {
 
     const rows = table.getElementsByTagName('tr');
     
-    for (let i = 1; i < rows.length; i++) { 
+    for (let i = 1; i < rows.length; i++) { // Skip header row
         const row = rows[i];
         const cells = row.getElementsByTagName('td');
         let found = false;

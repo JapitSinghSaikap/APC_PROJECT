@@ -1,3 +1,4 @@
+package com.example.inventory.config;
 import com.example.inventory.model.Product;
 import com.example.inventory.repository.ProductRepository;
 import org.springframework.boot.CommandLineRunner;

@@ -140,38 +140,4 @@ public class DashboardController {
         return ResponseEntity.ok(stats);
     }
     
-    // GET /api/dashboard/performance - Get system performance metrics
-    // @GetMapping("/performance")
-    // public ResponseEntity<Map<String, Object>> getPerformanceMetrics() {
-    //     Map<String, Object> performance = new HashMap<>();
-        
-        // Calculate performance indicators
-    //     long totalProducts = productService.findAll().size();
-    //     long lowStockProducts = productService.getLowStockProducts().size();
-        
-    //     double stockHealthPercentage = totalProducts > 0 ? 
-    //         ((double)(totalProducts - lowStockProducts) / totalProducts) * 100 : 100;
-        
-    //     long totalOrders = orderService.findAll().size();
-    //     long delayedOrders = orderService.getDelayedOrders().size();
-        
-    //     double orderPerformancePercentage = totalOrders > 0 ?
-    //         ((double)(totalOrders - delayedOrders) / totalOrders) * 100 : 100;
-        
-    //     long totalSuppliers = supplierService.findAll().size();
-    //     long activeSuppliers = supplierService.getActiveSuppliers().size();
-        
-    //     double supplierReliabilityPercentage = totalSuppliers > 0 ?
-    //         ((double)activeSuppliers / totalSuppliers) * 100 : 100;
-        
-    //     performance.put("stockHealthPercentage", Math.round(stockHealthPercentage * 100.0) / 100.0);
-    //     performance.put("orderPerformancePercentage", Math.round(orderPerformancePercentage * 100.0) / 100.0);
-    //     performance.put("supplierReliabilityPercentage", Math.round(supplierReliabilityPercentage * 100.0) / 100.0);
-        
-    //     // Overall system health score (average of key metrics)
-    //     double overallHealthScore = (stockHealthPercentage + orderPerformancePercentage + supplierReliabilityPercentage) / 3;
-    //     performance.put("overallHealthScore", Math.round(overallHealthScore * 100.0) / 100.0);
-        
-    //     return ResponseEntity.ok(performance);
-    // }
 }

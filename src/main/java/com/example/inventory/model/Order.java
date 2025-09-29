@@ -14,6 +14,7 @@ import java.util.List;
 @Entity
 @Table(name = "orders")
 public class Order {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -54,11 +55,11 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnoreProperties({"order", "hibernateLazyInitializer", "handler"})
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    // Enums
+   
     public enum OrderStatus {
         PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED, DELAYED
     }
@@ -67,7 +68,7 @@ public class Order {
         PURCHASE, SALE, TRANSFER
     }
 
-    // Constructors
+    
     public Order() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -81,107 +82,78 @@ public class Order {
         this.supplier = supplier;
     }
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    // =============== GETTERS & SETTERS ===============
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    public String getOrderNumber() { return orderNumber; }
+    public void setOrderNumber(String orderNumber) { this.orderNumber = orderNumber; }
 
-    public String getOrderNumber() {
-        return orderNumber;
-    }
-
-    public void setOrderNumber(String orderNumber) {
-        this.orderNumber = orderNumber;
-    }
-
-    public OrderStatus getStatus() {
-        return status;
-    }
-
+    public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) {
         this.status = status;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public OrderType getType() {
-        return type;
-    }
-
+    public OrderType getType() { return type; }
     public void setType(OrderType type) {
         this.type = type;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public Supplier getSupplier() {
-        return supplier;
-    }
+    public Supplier getSupplier() { return supplier; }
+    public void setSupplier(Supplier supplier) { this.supplier = supplier; }
 
-    public void setSupplier(Supplier supplier) {
-        this.supplier = supplier;
-    }
-
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
+    public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public LocalDateTime getOrderDate() {
-        return orderDate;
-    }
+    public LocalDateTime getOrderDate() { return orderDate; }
+    public void setOrderDate(LocalDateTime orderDate) { this.orderDate = orderDate; }
 
-    public void setOrderDate(LocalDateTime orderDate) {
-        this.orderDate = orderDate;
-    }
-
-    public LocalDateTime getExpectedDeliveryDate() {
-        return expectedDeliveryDate;
-    }
-
+    public LocalDateTime getExpectedDeliveryDate() { return expectedDeliveryDate; }
     public void setExpectedDeliveryDate(LocalDateTime expectedDeliveryDate) {
         this.expectedDeliveryDate = expectedDeliveryDate;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public LocalDateTime getActualDeliveryDate() {
-        return actualDeliveryDate;
-    }
-
+    public LocalDateTime getActualDeliveryDate() { return actualDeliveryDate; }
     public void setActualDeliveryDate(LocalDateTime actualDeliveryDate) {
         this.actualDeliveryDate = actualDeliveryDate;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public List<OrderItem> getOrderItems() {
-        return orderItems;
-    }
-
+    public List<OrderItem> getOrderItems() { return orderItems; }
     public void setOrderItems(List<OrderItem> orderItems) {
-        this.orderItems = orderItems;
+        this.orderItems.clear();
+        if (orderItems != null) {
+            for (OrderItem item : orderItems) {
+                addOrderItem(item);
+            }
+        }
+        calculateTotalAmount();
+    }
+
+    // =============== JPA CALLBACKS ===============
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
         calculateTotalAmount();
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+        calculateTotalAmount();
     }
 
-    // Business methods
+    // =============== BUSINESS METHODS ===============
     public void addOrderItem(OrderItem item) {
         orderItems.add(item);
         item.setOrder(this);
@@ -198,39 +170,24 @@ public class Order {
         this.totalAmount = orderItems.stream()
                 .map(item -> item.getUnitPrice().multiply(new BigDecimal(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        this.updatedAt = LocalDateTime.now();
     }
 
-    public boolean isPending() {
-        return status == OrderStatus.PENDING;
-    }
+    public boolean isPending() { return status == OrderStatus.PENDING; }
 
     public boolean isDelayed() {
-        return expectedDeliveryDate != null && 
-               LocalDateTime.now().isAfter(expectedDeliveryDate) && 
+        return expectedDeliveryDate != null &&
+               LocalDateTime.now().isAfter(expectedDeliveryDate) &&
                actualDeliveryDate == null;
     }
 
-    public void confirm() {
-        this.status = OrderStatus.CONFIRMED;
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public void ship() {
-        this.status = OrderStatus.SHIPPED;
-        this.updatedAt = LocalDateTime.now();
-    }
-
+    public void confirm() { this.status = OrderStatus.CONFIRMED; this.updatedAt = LocalDateTime.now(); }
+    public void ship() { this.status = OrderStatus.SHIPPED; this.updatedAt = LocalDateTime.now(); }
     public void deliver() {
         this.status = OrderStatus.DELIVERED;
         this.actualDeliveryDate = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
-
-    public void cancel() {
-        this.status = OrderStatus.CANCELLED;
-        this.updatedAt = LocalDateTime.now();
-    }
+    public void cancel() { this.status = OrderStatus.CANCELLED; this.updatedAt = LocalDateTime.now(); }
 
     private String generateOrderNumber() {
         return "ORD-" + System.currentTimeMillis();

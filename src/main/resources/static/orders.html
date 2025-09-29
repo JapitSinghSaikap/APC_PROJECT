@@ -10,17 +10,22 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <div class="nav-brand">
-                <i class="fas fa-boxes"></i>
-                Inventory System
+            <div class="nav-logo">
+                <i class="fas fa-warehouse"></i>
+                <span>Inventory Manager</span>
             </div>
             <ul class="nav-menu">
-                <li><a href="index.html"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><a href="inventory.html"><i class="fas fa-box"></i> Inventory</a></li>
-                <li><a href="suppliers.html"><i class="fas fa-truck"></i> Suppliers</a></li>
-                <li><a href="orders.html" class="active"><i class="fas fa-shopping-cart"></i> Orders</a></li>
-                <li><a href="warehouses.html"><i class="fas fa-warehouse"></i> Warehouses</a></li>
+                <li><a href="index.html" class="nav-link"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="inventory.html" class="nav-link"><i class="fas fa-boxes"></i> Inventory</a></li>
+                <li><a href="suppliers.html" class="nav-link active"><i class="fas fa-truck"></i> Suppliers</a></li>
+                <li><a href="orders.html" class="nav-link"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+                <li><a href="warehouses.html" class="nav-link"><i class="fas fa-building"></i> Warehouses</a></li>
             </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
         </div>
     </nav>
 
@@ -33,10 +38,10 @@
         </div>
 
         <!-- Filter Controls -->
-        <div class="filter-section">
-            <div class="filter-group">
-                <label for="statusFilter">Status:</label>
-                <select id="statusFilter" onchange="filterOrders()">
+        <div style="display:flex; flex-wrap:wrap; gap:1rem; margin-bottom:1.5rem; align-items:flex-end;">
+            <div style="display:flex; flex-direction:column; flex:1; min-width:150px;">
+                <label for="statusFilter" style="margin-bottom:0.25rem; font-weight:500; color:#2d3748;">Status:</label>
+                <select id="statusFilter" onchange="filterOrders()" style="padding:0.5rem; border:1px solid #e2e8f0; border-radius:5px; font-size:1rem;">
                     <option value="">All Statuses</option>
                     <option value="PENDING">Pending</option>
                     <option value="CONFIRMED">Confirmed</option>
@@ -46,42 +51,47 @@
                     <option value="DELAYED">Delayed</option>
                 </select>
             </div>
-            <div class="filter-group">
-                <label for="typeFilter">Type:</label>
-                <select id="typeFilter" onchange="filterOrders()">
+            <div style="display:flex; flex-direction:column; flex:1; min-width:150px;">
+                <label for="typeFilter" style="margin-bottom:0.25rem; font-weight:500; color:#2d3748;">Type:</label>
+                <select id="typeFilter" onchange="filterOrders()" style="padding:0.5rem; border:1px solid #e2e8f0; border-radius:5px; font-size:1rem;">
                     <option value="">All Types</option>
                     <option value="PURCHASE">Purchase</option>
                     <option value="SALE">Sale</option>
                     <option value="TRANSFER">Transfer</option>
                 </select>
             </div>
-            <div class="filter-group">
-                <label for="supplierFilter">Supplier:</label>
-                <select id="supplierFilter" onchange="filterOrders()">
+            <div style="display:flex; flex-direction:column; flex:1; min-width:150px;">
+                <label for="supplierFilter" style="margin-bottom:0.25rem; font-weight:500; color:#2d3748;">Supplier:</label>
+                <select id="supplierFilter" onchange="filterOrders()" style="padding:0.5rem; border:1px solid #e2e8f0; border-radius:5px; font-size:1rem;">
                     <option value="">All Suppliers</option>
                 </select>
             </div>
-            <div class="filter-group">
-                <label for="searchInput">Search:</label>
-                <input type="text" id="searchInput" placeholder="Search by order number..." onkeyup="filterOrders()">
+            <div style="display:flex; flex-direction:column; flex:1; min-width:200px;">
+                <label for="searchInput" style="margin-bottom:0.25rem; font-weight:500; color:#2d3748;">Search:</label>
+                <input type="text" id="searchInput" placeholder="Search by order number..." onkeyup="filterOrders()" style="padding:0.5rem; border:1px solid #e2e8f0; border-radius:5px; font-size:1rem;">
             </div>
-        </div>
+</div>
+
 
         <!-- Orders Grid -->
-        <div class="data-grid">
-            <div class="grid-header">
-                <div class="grid-cell">Order Number</div>
-                <div class="grid-cell">Type</div>
-                <div class="grid-cell">Status</div>
-                <div class="grid-cell">Supplier</div>
-                <div class="grid-cell">Order Date</div>
-                <div class="grid-cell">Total Amount</div>
-                <div class="grid-cell">Actions</div>
-            </div>
-            <div id="ordersContainer" class="grid-body">
+        <div class="table-container" style="overflow-x:auto; margin-top: 1.5rem;">
+        <table id="ordersTable" style="width:100%; border-collapse: collapse; min-width: 800px;">
+            <thead>
+                <tr style="background-color:#f7fafc; color:#2d3748; text-align:left; font-weight:600;">
+                    <th style="padding: 0.75rem 1rem; border-bottom:1px solid #e2e8f0;">Order Number</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom:1px solid #e2e8f0;">Type</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom:1px solid #e2e8f0;">Status</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom:1px solid #e2e8f0;">Supplier</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom:1px solid #e2e8f0;">Order Date</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom:1px solid #e2e8f0;">Total Amount</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom:1px solid #e2e8f0;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="ordersContainer">
                 <!-- Orders will be loaded here -->
-            </div>
-        </div>
+            </tbody>
+        </table>
+    </div>
 
         <div id="loadingSpinner" class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i> Loading orders...
@@ -192,11 +202,7 @@
 
     <script src="js/main.js"></script>
     <script>
-        let allOrders = [];
-        let currentOrder = null;
-        let orderItemIndex = 0;
-        let availableProducts = [];
-        let availableSuppliers = [];
+      
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
@@ -255,53 +261,79 @@
             }
         }
 
-        function displayOrders(orders) {
-            const container = document.getElementById('ordersContainer');
-            const emptyState = document.getElementById('emptyState');
+       
+            function displayOrders(orders) {
+                const container = document.getElementById('ordersContainer');
+                const emptyState = document.getElementById('emptyState');
 
-            if (orders.length === 0) {
-                container.innerHTML = '';
-                emptyState.style.display = 'block';
-                return;
-            }
+                if (orders.length === 0) {
+                    container.innerHTML = '';
+                    emptyState.style.display = 'block';
+                    return;
+                }
 
-            emptyState.style.display = 'none';
-            container.innerHTML = orders.map(order => `
-                <div class="grid-row">
-                    <div class="grid-cell">
-                        <strong>${order.orderNumber}</strong>
-                    </div>
-                    <div class="grid-cell">
-                        <span class="badge badge-${order.type.toLowerCase()}">${order.type}</span>
-                    </div>
-                    <div class="grid-cell">
-                        <span class="status-badge status-${order.status.toLowerCase()}">${order.status}</span>
-                    </div>
-                    <div class="grid-cell">
-                        ${order.supplier ? order.supplier.name : 'N/A'}
-                    </div>
-                    <div class="grid-cell">
-                        ${formatDate(order.orderDate)}
-                    </div>
-                    <div class="grid-cell">
-                        <strong>$${(order.totalAmount || 0).toFixed(2)}</strong>
-                    </div>
-                    <div class="grid-cell">
-                        <div class="action-buttons">
-                            <button class="btn btn-sm btn-info" onclick="viewOrderDetails(${order.id})" title="View Details">
+                emptyState.style.display = 'none';
+
+                container.innerHTML = orders.map(order => `
+                    <tr style="border-bottom:1px solid #e2e8f0;">
+                        <td style="padding:0.75rem 1rem;"><strong>${order.orderNumber}</strong></td>
+                                <td style="padding:0.75rem 1rem;">
+                                    <span style="
+                                        display:inline-block; 
+                                        padding:0.25rem 0.75rem; 
+                                        border-radius:12px; 
+                                        font-size:0.8rem; 
+                                        font-weight:bold; 
+                                        text-transform:uppercase; 
+                                color:white; 
+                                background-color:${order.type.toLowerCase() === 'purchase' ? '#1976d2' : '#388e3c'};">
+                                ${order.type}
+                            </span>
+                        </td>
+                        <td style="padding:0.75rem 1rem;">
+                            <span style="
+                                display:inline-block; 
+                                padding:0.25rem 0.75rem; 
+                                border-radius:12px; 
+                                font-size:0.8rem; 
+                                font-weight:bold; 
+                                text-transform:uppercase; 
+                                color:white; 
+                                background-color:${getStatusColor(order.status)};">
+                                ${order.status}
+                            </span>
+                        </td>
+                        <td style="padding:0.75rem 1rem;">${order.supplier ? order.supplier.name : 'N/A'}</td>
+                        <td style="padding:0.75rem 1rem;">${formatDate(order.orderDate)}</td>
+                        <td style="padding:0.75rem 1rem;"><strong>$${(order.totalAmount || 0).toFixed(2)}</strong></td>
+                        <td style="padding:0.75rem 1rem;">
+                            <button onclick="viewOrderDetails(${order.id})" style="margin-right:0.3rem; padding:0.4rem 0.6rem; border:none; border-radius:5px; background:#3498db; color:white; cursor:pointer;">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button class="btn btn-sm btn-primary" onclick="editOrder(${order.id})" title="Edit">
+                            <button onclick="editOrder(${order.id})" style="margin-right:0.3rem; padding:0.4rem 0.6rem; border:none; border-radius:5px; background:#2ecc71; color:white; cursor:pointer;">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteOrder(${order.id})" title="Delete">
+                            <button onclick="deleteOrder(${order.id})" style="padding:0.4rem 0.6rem; border:none; border-radius:5px; background:#e74c3c; color:white; cursor:pointer;">
                                 <i class="fas fa-trash"></i>
                             </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+        // Helper function for status badge colors
+        function getStatusColor(status) {
+            switch(status.toLowerCase()) {
+                case 'pending': return '#f39c12';
+                case 'confirmed': return '#3498db';
+                case 'shipped': return '#9b59b6';
+                case 'delivered': return '#2ecc71';
+                case 'cancelled': return '#e74c3c';
+                case 'delayed': return '#c2185b';
+                default: return '#95a5a6';
+            }
         }
+
 
         function filterOrders() {
             const statusFilter = document.getElementById('statusFilter').value;
@@ -412,7 +444,7 @@
             document.getElementById('totalAmount').textContent = total.toFixed(2);
         }
 
-        async function saveOrder(event) {
+            async function saveOrder(event) {
             event.preventDefault();
             
             try {
@@ -450,9 +482,22 @@
                     response = await ApiClient.post('/orders', orderData);
                 }
 
-                showNotification(currentOrder ? 'Order updated successfully' : 'Order created successfully', 'success');
+                // ✅ Use backend-calculated totalAmount
+                const savedOrder = response; // ApiClient already returns JSON
+                if (savedOrder && typeof savedOrder.totalAmount !== "undefined") {
+                    const totalAmountEl = document.getElementById('totalAmount');
+                    if (totalAmountEl) {
+                        totalAmountEl.textContent = (savedOrder.totalAmount || 0).toFixed(2);
+                    }
+                }
+
+                showNotification(
+                    currentOrder ? 'Order updated successfully' : 'Order created successfully',
+                    'success'
+                );
+
                 closeOrderModal();
-                loadOrders();
+                loadOrders(); 
             } catch (error) {
                 console.error('Error saving order:', error);
                 showNotification('Error saving order', 'error');
